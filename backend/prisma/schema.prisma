@@ -1,0 +1,171 @@
+generator client {
+  provider = "prisma-client-js" // Specifies the Prisma client for interacting with the database
+}
+
+datasource db {
+  provider = "postgresql" // Specifies PostgreSQL as the database provider
+  url      = env("DATABASE_URL") // Uses an environment variable for the database connection URL
+}
+
+/// Users table stores details about lenders and admins.
+model Users {
+  userId       String    @id @default(uuid()) // Unique identifier for each user
+  name         String    @db.VarChar(255) // User's name with a max length of 255 characters
+  email        String    @unique @db.VarChar(255) // Unique email for user authentication
+  phoneNumber  String    @unique @db.VarChar(15) // Unique phone number for verification
+  passwordHash String // Hashed password for security
+  role         Role      @default(Lender) // User role (Admin or Lender), defaulting to Lender
+  createdAt    DateTime  @default(now()) // Timestamp when the user is created
+  updatedAt    DateTime  @updatedAt // Timestamp automatically updated when a record is modified
+  deletedAt    DateTime? // Soft delete functionality (null if active)
+
+  // Relationships
+  loansIssued         Loans[] // Loans issued by this user (Lender)
+  repaymentsCollected Repayments[] // Repayments collected by this user
+  financialReports    FinancialSummary[] // Monthly financial reports related to this user
+  capitalUtilizations CapitalUtilization[] // Capital utilization reports for this user
+
+  @@index([name]) // Index on name to speed up searches
+}
+
+/// Enum defining roles for users in the system.
+enum Role {
+  Admin // Has higher privileges, including managing lenders
+  Lender // Issues loans and collects repayments
+}
+
+/// Borrowers table stores details of borrowers who take loans.
+model Borrowers {
+  borrowerId  String   @id @default(uuid()) // Unique identifier for each borrower
+  name        String   @db.VarChar(255) // Borrower's name
+  email       String   @unique @db.VarChar(255) // Unique email for communication
+  phoneNumber String   @unique @db.VarChar(15) // Unique phone number
+  address     String // Physical address of the borrower
+  createdAt   DateTime @default(now()) // Timestamp when the borrower is registered
+  updatedAt   DateTime @updatedAt // Timestamp automatically updated on modification
+
+  // Relationships
+  loansTaken     Loans[] // Loans taken by this borrower
+  repaymentsMade Repayments[] // Repayments made by this borrower
+  riskAssessment RiskAssessment? // Risk assessment score for this borrower
+
+  @@index([name]) // Index on name to improve query performance
+}
+
+/// Loans table stores details of issued loans.
+model Loans {
+  loanId                String     @id @default(uuid()) // Unique identifier for each loan
+  borrowerId            String // References the borrower who took the loan
+  issuedById            String // References the lender who issued the loan
+  principalAmount       Decimal    @db.Decimal(10, 2) // Original loan amount
+  upfrontDeductedAmount Decimal    @db.Decimal(10, 2) // Deducted amount at the time of loan issuance
+  repaymentPeriodDays   Int // Total number of days for repayment
+  dueDate               DateTime // Due date of the loan
+  dailyRepaymentAmount  Decimal    @db.Decimal(10, 2) // Amount to be repaid daily
+  pendingAmount         Decimal    @db.Decimal(10, 2) // Remaining amount to be repaid
+  daysToRepay           String[] // Tracks missed/due payment days for analysis
+  status                LoanStatus @default(Active) // Current status of the loan
+  issuedAt              DateTime   @default(now()) // Timestamp when the loan was issued
+  closedAt              DateTime? // Timestamp when the loan was closed (if applicable)
+
+  // Relationships
+  repayments Repayments[] // Repayments made towards this loan
+  lender     Users        @relation(fields: [issuedById], references: [userId]) // Lender issuing the loan
+  borrower   Borrowers    @relation(fields: [borrowerId], references: [borrowerId]) // Borrower taking the loan
+}
+
+/// Enum representing different statuses a loan can have.
+enum LoanStatus {
+  Active // Loan is active and being repaid
+  Closed // Loan has been fully repaid
+  Defaulted // Loan is overdue and has missed payments
+}
+
+/// Repayments table stores details of repayments made by borrowers.
+model Repayments {
+  repaymentId String          @id @default(uuid()) // Unique identifier for each repayment
+  loanId      String // References the loan for which the repayment is made
+  borrowerId  String // References the borrower making the repayment
+  collectedBy String // References the user (Lender) who collected the repayment
+  dueDate     DateTime // Expected due date for the repayment
+  paidDate    DateTime // Actual date when payment was made
+  amountPaid  Decimal         @db.Decimal(10, 2) // Amount paid in this transaction
+  status      RepaymentStatus @default(Unpaid) // Status of the repayment
+  createdAt   DateTime        @default(now()) // Timestamp when repayment was recorded
+
+  // Relationships
+  collectedByUser Users     @relation(fields: [collectedBy], references: [userId]) // Lender collecting the repayment
+  loan            Loans     @relation(fields: [loanId], references: [loanId]) // Loan for which repayment is made
+  borrower        Borrowers @relation(fields: [borrowerId], references: [borrowerId]) // Borrower making the repayment
+}
+
+/// Enum representing different statuses of repayments.
+enum RepaymentStatus {
+  Paid // Repayment was successfully made
+  Unpaid // Repayment is still due
+  Missed // Repayment was missed
+}
+
+/// RiskAssessment table calculates and stores risk scores for borrowers.
+model RiskAssessment {
+  assessmentId              String    @id @default(uuid()) // Unique identifier for each assessment
+  borrowerId                String    @unique // References borrower being assessed
+  totalLoans                Int // Total number of loans taken by the borrower
+  missedPayments            Int // Total missed repayments
+  totalDueRepayments        Int // Total due repayments
+  totalPaidRepayments       Int // Total repayments made
+  onTimePayments            Int // Repayments made on time
+  repaymentConsistencyScore Decimal   @db.Decimal(5, 2) // Score measuring repayment consistency
+  riskLevel                 RiskLevel @default(Low_Risk) // Risk level based on consistency
+  updatedAt                 DateTime  @updatedAt // Timestamp when assessment was last updated
+
+  // Relationship
+  borrower Borrowers @relation(fields: [borrowerId], references: [borrowerId]) // Links to the borrower
+
+  @@index([riskLevel]) // Index on risk level to speed up filtering
+}
+
+/// Enum defining different risk levels for borrowers.
+enum RiskLevel {
+  Low_Risk // Borrower has a good repayment record
+  Moderate_Risk // Borrower has occasional missed payments
+  High_Risk // Borrower frequently misses payments
+}
+
+/// FinancialSummary table stores monthly financial reports.
+model FinancialSummary {
+  id                                    String   @id @default(uuid()) // Unique identifier for each report
+  userId                                String // References the lender generating the report
+  month                                 DateTime // Month for which the report is generated
+  totalLoansIssued                      Int // Number of loans issued in the month
+  totalPrincipalLent                    Decimal  @db.Decimal(10, 2) // Total principal amount lent
+  totalUpfrontDeductions                Decimal  @db.Decimal(10, 2) // Total upfront deductions made
+  totalRepaymentsCollected              Int // Total repayments collected
+  totalMissedRepayments                 Int // Total missed repayments
+  totalAmountCollectedThroughRepayments Decimal  @db.Decimal(10, 2) // Total repayment amount collected
+  activeLoansCount                      Int // Count of currently active loans
+  closedLoansCount                      Int // Count of closed loans
+  defaultedLoansCount                   Int // Count of defaulted loans
+  updatedAt                             DateTime @updatedAt // Timestamp for last update
+
+  // Relationship
+  user Users @relation(fields: [userId], references: [userId]) // Links to lender
+
+  @@index([month]) // Index for filtering by month
+}
+
+/// CapitalUtilization tracks how efficiently capital is used.
+model CapitalUtilization {
+  id                    String   @id @default(uuid()) // Unique identifier
+  month                 DateTime // Month of report
+  userId                String // References lender
+  totalAvailableCapital Decimal  @db.Decimal(10, 2) // Total available capital
+  totalLentOut          Decimal  @db.Decimal(10, 2) // Amount lent out
+  utilizationEfficiency Decimal  @db.Decimal(5, 2) // Efficiency percentage
+  idleCapital           Decimal  @db.Decimal(10, 2) // Unused capital amount
+  idleCapitalAlert      Boolean  @default(false) // Alert if capital remains unused
+  updatedAt             DateTime @updatedAt // Last updated timestamp
+
+  // Relationship
+  user Users @relation(fields: [userId], references: [userId]) // Links to lender
+}
