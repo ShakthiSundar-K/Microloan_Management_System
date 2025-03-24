@@ -9,7 +9,7 @@ const createBorrowerController = async(req: Request,res:Response) => {
         res.status(201).json({message:"Borrower added successfully"});
     }    
     catch(error){
-        res.status(400).json({message:"Failed to add borrower",error:(error as Error).message}),;
+        res.status(400).json({message:"Failed to add borrower",error:(error as Error).message});
     }
 }
 

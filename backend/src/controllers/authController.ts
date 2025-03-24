@@ -10,7 +10,7 @@ import bcrypt from "bcryptjs";
 dotenv.config();
 
 const generateToken = (user : { userId : string,email:string, role: Role})=>{
-    return jwt.sign({id: user.userId,email:user.email, role:user.role}, process.env.JWT_SECRET as string, {expiresIn: process.env.JWT_EXPIRY ? parseInt(process.env.JWT_EXPIRY, 10) : undefined});
+    return jwt.sign({id: user.userId,email:user.email, role:user.role}, process.env.JWT_SECRET as string, {expiresIn: "7d"});
 }
 
 //Register

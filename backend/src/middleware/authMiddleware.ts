@@ -8,7 +8,7 @@ dotenv.config();
 declare global {
     namespace Express {
         interface Request {
-            user?: JwtPayload | string;
+            user?: any;
         }
     }
 }
@@ -26,8 +26,8 @@ export const protect = async (req: Request, res: Response, next: NextFunction): 
         if (!process.env.JWT_SECRET) {
             throw new Error("JWT_SECRET is not defined in environment variables");
         }
-
-        const decoded = jwt.verify(token, process.env.JWT_SECRET) as JwtPayload;
+        
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
         req.user = decoded; // Assign the decoded payload to req.user
 
         next(); // Move to the next middleware/controller
