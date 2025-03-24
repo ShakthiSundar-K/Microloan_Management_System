@@ -1,35 +1,38 @@
-import jwt from "jsonwebtoken";
-import { Request, Response } from "express";
-
-// Extend the Request interface to include the user property
-declare global {
-    namespace Express {
-        interface Request {
-            user?: any; //add user property
-        }
-    }
-}
+import jwt, { JwtPayload } from "jsonwebtoken";
+import { Request, Response, NextFunction } from "express";
 import dotenv from "dotenv";
 
 dotenv.config();
 
-export const protect = (req: Request, res: Response, next: () => void) => {
-    let token = req.headers.authorization;
-    if (!token) return res.status(401).json({ msg: "No token, authorization denied" });
+// Extend Request interface to include user property
+declare global {
+    namespace Express {
+        interface Request {
+            user?: JwtPayload | string;
+        }
+    }
+}
 
+export const protect = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        token = token.split(" ")[1]; // for removing Bearer prefix
+        let token = req.headers.authorization;
+        if (!token) {
+            res.status(401).json({ message: "No token, authorization denied" });
+            return; // Exit the function after sending a response
+        }
+
+        token = token.split(" ")[1]; // Remove "Bearer " prefix
+
         if (!process.env.JWT_SECRET) {
             throw new Error("JWT_SECRET is not defined in environment variables");
         }
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = decoded;
-        next();
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET) as JwtPayload;
+        req.user = decoded; // Assign the decoded payload to req.user
+
+        next(); // Move to the next middleware/controller
     } catch (error) {
         res.status(401).json({ message: "Invalid token, authorization denied" });
+        return; // Ensure function exits after sending a response
     }
 };
-
-function next() {
-    throw new Error("Function not implemented.");
-}
