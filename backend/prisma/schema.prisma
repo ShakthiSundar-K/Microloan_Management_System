@@ -36,13 +36,13 @@ enum Role {
 
 /// Borrowers table stores details of borrowers who take loans.
 model Borrowers {
-  borrowerId  String   @id @default(uuid()) // Unique identifier for each borrower
-  name        String   @db.VarChar(255) // Borrower's name
-  email       String   @unique @db.VarChar(255) // Unique email for communication
-  phoneNumber String   @unique @db.VarChar(15) // Unique phone number
-  address     String // Physical address of the borrower
-  createdAt   DateTime @default(now()) // Timestamp when the borrower is registered
-  updatedAt   DateTime @updatedAt // Timestamp automatically updated on modification
+  borrowerId   String   @id @default(uuid()) // Unique identifier for each borrower
+  name         String   @db.VarChar(255) // Borrower's name
+  passwordHash String   @db.VarChar(255) // Hashed password for security
+  phoneNumber  String   @unique @db.VarChar(15) // Unique phone number
+  address      String // Physical address of the borrower
+  createdAt    DateTime @default(now()) // Timestamp when the borrower is registered
+  updatedAt    DateTime @updatedAt // Timestamp automatically updated on modification
 
   // Relationships
   loansTaken     Loans[] // Loans taken by this borrower
