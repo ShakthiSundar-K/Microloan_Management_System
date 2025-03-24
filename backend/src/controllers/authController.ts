@@ -1,8 +1,11 @@
 import jwt from "jsonwebtoken";
 import { Request, Response } from "express";
 import dotenv from "dotenv";
-import {findUserByEmail,createUser,findUserByPhone,comparePasswords} from "../models/userModel";
+import {findUserByEmail,createUser,findUserByPhone,comparePasswords,findUserByUserId,updatePassword} from "../models/userModel";
 import { Role } from "@prisma/client";
+import { sendEmail } from "../services/emailService";
+import bcrypt from "bcryptjs";
+
 
 dotenv.config();
 
@@ -85,7 +88,67 @@ const login = async (req:Request, res:Response):Promise<void> => {
 }
 
 const forgotPassword = async (req: Request, res: Response): Promise<void> => {
-    
+    try{
+        const {email} = req.body;
+
+        //check if the user exists
+        const user = await findUserByEmail(email);
+
+        if(!user){
+            res.status(500).json({messgae:"User does not exist"});
+            return;
+        }
+
+        //generate a password reset token
+        const resetToken = jwt.sign({id: user.userId}, process.env.RESET_PASSWORD_SECRET  as string, {expiresIn: "15m"});
+        
+        await sendEmail(
+            email,
+            "Password Reset",
+            `Click this link to reset your password: https://localhost:3000/reset-password/${resetToken}`
+        )
+
+        res.status(200).json({message:"Password reset link sent to email"});
+    }
+    catch(error){
+        res.status(500).json({message:"Error in forgotPassword controller",error:(error as Error).message});
+    }
 }
 
-export {register,login};
+const resetPassword = async (req:Request,res:Response): Promise<void> => {
+
+try{
+    const {newPassword,token} = req.body;
+
+    //verify the reset token
+    const decodedToken = jwt.verify(token, process.env.RESET_PASSWORD_SECRET as string);
+
+    if (!decodedToken || typeof decodedToken === "string") {
+        res.status(401).json({message:"Invalid or expired token"});
+        return;
+    }
+
+    //find user by id
+    const user = await findUserByUserId(decodedToken.id);
+
+    if(!user){
+        res.status(401).json({message:"User not found"});
+        return;
+    }
+
+    //Hash the new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    //update the password
+    await updatePassword(user.userId, hashedPassword);
+
+    res.status(200).json({message:"Password Reset Successful"});
+
+}catch(error){
+    res.json({message:"Error in reseting password", error:(error as Error).message});
+}
+
+}
+
+
+export {register,login,forgotPassword,resetPassword};

@@ -25,6 +25,15 @@ const findUserByEmail = async (email:string) => {
     })
 }
 
+//for updating a userId
+const findUserByUserId = async (userId:string) => {
+    return await prisma.users.findUnique({
+        where: {
+            userId: userId,
+        }
+    })
+}
+
 //for finding a user by phone number
 const findUserByPhone = async (phoneNumber:string) => {
     return await prisma.users.findUnique({
@@ -47,4 +56,11 @@ const comparePasswords = async(enteredPassword:string,passwordHash:string) => {
     return await bcrypt.compare(enteredPassword,passwordHash);
 }
 
-export  {createUser, findUserByEmail, findUserByPhone, findUsersByName, comparePasswords };
+const updatePassword = async(userId:string, passwordHash:string) => {
+    return await prisma.users.update({
+        where: { userId },
+        data: {  passwordHash },
+    });
+}
+
+export  {createUser, findUserByEmail, findUserByPhone, findUsersByName, comparePasswords,findUserByUserId,updatePassword };
