@@ -52,7 +52,7 @@ const getBorrowerByPhoneNumberController = async(req: Request,res:Response) => {
 // Update Borrower
 const updateBorrowerPasswordController = async (req: Request, res: Response) => {
     try {
-        const { id } = req.user.id; 
+        const { id } = req.user; 
         const { password } = req.body;
         await updateBorrowerPassword(id,password);
         res.json({ message: "Borrower Password updated successfully" });

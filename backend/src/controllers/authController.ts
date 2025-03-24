@@ -5,12 +5,16 @@ import {findUserByEmail,createUser,findUserByPhone,comparePasswords,findUserByUs
 import { Role } from "@prisma/client";
 import { sendEmail } from "../services/emailService";
 import bcrypt from "bcryptjs";
+import {getBorrowerByPhoneNumber} from "../models/borrowerModel";
 
 
 dotenv.config();
 
 const generateToken = (user : { userId : string,email:string, role: Role})=>{
     return jwt.sign({id: user.userId,email:user.email, role:user.role}, process.env.JWT_SECRET as string, {expiresIn: "7d"});
+}
+const generateBorrowerToken = (borrower : { borrowerId : string, role: string})=>{
+    return jwt.sign({id: borrower.borrowerId,role:"BORROWER"}, process.env.JWT_SECRET as string, {expiresIn: "7d"});
 }
 
 //Register
@@ -52,40 +56,48 @@ const register = async (req:Request, res:Response):Promise<void> => {
 };
 
 //Login
-const login = async (req:Request, res:Response):Promise<void> => {
-    try{
+const login = async (req: Request, res: Response): Promise<void> => {
+    try {
+        // Extracting the phoneNumber and password from the request body
+        const { phoneNumber, password } = req.body;
 
-        //extracting the phoneNumber and password from the request body
-        const {phoneNumber, password} = req.body;
+        let user = await findUserByPhone(phoneNumber);
+        let token: string;
 
-        //check if the user exists by phone number
-        const user = await findUserByPhone(phoneNumber);
+        if (user) {
+            // If user exists in Users table
+            const isMatch = await comparePasswords(password, user.passwordHash);
+            if (!isMatch) {
+                res.status(401).json({ message: "Invalid credentials" });
+                return;
+            }
 
-        //if the user does not exist, return an error
-        if(!user){
-             res.status(401).json({ message: "User not found" });
-             return;
+            token = generateToken(user);
+        } else {
+            // If not found in Users, check in Borrowers table
+            const borrower = await getBorrowerByPhoneNumber(phoneNumber);
+
+            if (!borrower) {
+                res.status(401).json({ message: "User not found" });
+                return;
+            }
+
+            const isMatch = await comparePasswords(password, borrower.passwordHash);
+            if (!isMatch) {
+                res.status(401).json({ message: "Invalid credentials" });
+                return;
+            }
+
+            token = generateBorrowerToken(borrower);
         }
 
-        //check if the password is correct
-        const isMatch = await comparePasswords(password, user.passwordHash);
+        res.json({ message: "Logged in successfully", token });
 
-        //if the password is incorrect, return an error
-        if(!isMatch){
-             res.status(401).json({ message: "Invalid credentials" });
-             return;
-        }
-
-        //generate and send a JWT token
-        const token = generateToken(user);
-
-        res.json({message: "Logged in successfully",token});
-
-
-    }catch(error){
-        res.status(500).json({message:"Error in login controller",error:(error as Error).message});
+    } catch (error) {
+        res.status(500).json({ message: "Error in login controller", error: (error as Error).message });
     }
-}
+};
+
 
 const forgotPassword = async (req: Request, res: Response): Promise<void> => {
     try{
