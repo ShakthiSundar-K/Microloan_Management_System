@@ -14,7 +14,7 @@ model Users {
   email        String    @unique @db.VarChar(255) // Unique email for user authentication
   phoneNumber  String    @unique @db.VarChar(15) // Unique phone number for verification
   passwordHash String // Hashed password for security
-  role         Role      @default(Lender) // User role (Admin or Lender), defaulting to Lender
+  role         Role      @default(LENDER) // User role (Admin or Lender), defaulting to Lender
   createdAt    DateTime  @default(now()) // Timestamp when the user is created
   updatedAt    DateTime  @updatedAt // Timestamp automatically updated when a record is modified
   deletedAt    DateTime? // Soft delete functionality (null if active)
@@ -30,8 +30,8 @@ model Users {
 
 /// Enum defining roles for users in the system.
 enum Role {
-  Admin // Has higher privileges, including managing lenders
-  Lender // Issues loans and collects repayments
+  ADMIN // Has higher privileges, including managing lenders
+  LENDER // Issues loans and collects repayments
 }
 
 /// Borrowers table stores details of borrowers who take loans.
