@@ -1,8 +1,18 @@
 import {Request, Response} from "express";
 import {createBorrower,getAllBorrowers,getBorrowerByPhoneNumber,deleteBorrower,updateBorrowerPassword,getBorrowerByName} from "../models/borrowerModel";
 
+// Middleware to check if the user is a LENDER
+const isLender = (req: Request, res: Response): boolean => {
+    if (req.user?.role !== "LENDER") {
+        res.status(403).json({ message: "You do not have access to perform this operation" });
+        return false;
+    }
+    return true;
+};
+
 //create borrower
 const createBorrowerController = async(req: Request,res:Response) => {
+    if (!isLender(req, res)) return;
     try{
         const {name,phoneNumber,address} = req.body;
         await createBorrower(name,phoneNumber,address);
@@ -15,6 +25,8 @@ const createBorrowerController = async(req: Request,res:Response) => {
 
 //get all borrowers
 const getAllBorrowersController = async(req: Request,res:Response) => {
+    if (!isLender(req, res)) return;
+
     try{
         const borrowers = await getAllBorrowers();
         res.status(200).json({message:"Successfully fetched the borrwers list",borrowers});
@@ -26,6 +38,7 @@ const getAllBorrowersController = async(req: Request,res:Response) => {
 
 //get borrower list by name
 const getBorrowerByNameController = async(req: Request,res:Response) => {
+    if (!isLender(req, res)) return;
     try{
         const {name} = req.body;
         const borrower = await getBorrowerByName(name);
@@ -38,6 +51,7 @@ const getBorrowerByNameController = async(req: Request,res:Response) => {
 
 //get borrower list by name
 const getBorrowerByPhoneNumberController = async(req: Request,res:Response) => {
+    if (!isLender(req, res)) return;
     try{
         const {phoneNumber} = req.body;
         const borrower = await getBorrowerByPhoneNumber(phoneNumber);
@@ -51,6 +65,7 @@ const getBorrowerByPhoneNumberController = async(req: Request,res:Response) => {
 
 // Update Borrower
 const updateBorrowerPasswordController = async (req: Request, res: Response) => {
+    if (!isLender(req, res)) return;
     try {
         const { id } = req.user; 
         const { password } = req.body;
@@ -63,6 +78,7 @@ const updateBorrowerPasswordController = async (req: Request, res: Response) => 
 
 //delete borrower
 const deleteBorrowerController = async (req: Request, res: Response) => {
+    if (!isLender(req, res)) return;
     try {
         const { borrowerId } = req.params;
         await deleteBorrower(borrowerId);
