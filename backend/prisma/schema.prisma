@@ -83,20 +83,22 @@ enum LoanStatus {
 
 /// Repayments table stores details of repayments made by borrowers.
 model Repayments {
-  repaymentId String          @id @default(uuid()) // Unique identifier for each repayment
-  loanId      String // References the loan for which the repayment is made
-  borrowerId  String // References the borrower making the repayment
-  collectedBy String // References the user (Lender) who collected the repayment
-  dueDate     DateTime // Expected due date for the repayment
-  paidDate    DateTime // Actual date when payment was made
-  amountPaid  Decimal         @db.Decimal(10, 2) // Amount paid in this transaction
-  status      RepaymentStatus @default(Unpaid) // Status of the repayment
-  createdAt   DateTime        @default(now()) // Timestamp when repayment was recorded
+  repaymentId String          @id @default(uuid())
+  loanId      String
+  borrowerId  String
+  collectedBy String
+  dueDate     DateTime
+  paidDate    DateTime? // Initially null, updated when paid
+  amountToPay Decimal         @db.Decimal(10, 2)
+  amountPaid  Decimal         @default(0.00) @db.Decimal(10, 2) // Default 0
+  status      RepaymentStatus @default(Unpaid)
+  isPending   Boolean         @default(true)
+  createdAt   DateTime        @default(now())
 
   // Relationships
-  collectedByUser Users     @relation(fields: [collectedBy], references: [userId]) // Lender collecting the repayment
-  loan            Loans     @relation(fields: [loanId], references: [loanId]) // Loan for which repayment is made
-  borrower        Borrowers @relation(fields: [borrowerId], references: [borrowerId]) // Borrower making the repayment
+  collectedByUser Users     @relation(fields: [collectedBy], references: [userId])
+  loan            Loans     @relation(fields: [loanId], references: [loanId])
+  borrower        Borrowers @relation(fields: [borrowerId], references: [borrowerId])
 }
 
 /// Enum representing different statuses of repayments.
