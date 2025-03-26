@@ -23,10 +23,11 @@ Lenders manage borrowers, issue loans, track repayments, and analyze financial d
 - Check Borrower Pending Amount  
 - Record Payment (Register daily repayments)  
 - Track Payments (Monitor payment history)  
-- View Payment History Log  
+- View Payment History Log
 
 ### **Financial Analysis & Insights**  
-- Export Data to Excel (For reporting and record-keeping)  
+- Export Data to Excel (For reporting and record-keeping)
+- Check daily collected amount
 - Check Idle Capital and Capital Utilization Efficiency  
 - Check Lending Recommendation System List (Suggests reliable borrowers)  
 - Check Blacklist (Avoid lending to unreliable borrowers)  
