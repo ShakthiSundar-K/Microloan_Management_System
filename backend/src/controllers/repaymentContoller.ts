@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { recordPayment } from "../models/repaymentModel";
+import { recordPayment,finishPaymentsForTheDay } from "../models/repaymentModel";
 
 const recordPaymentController = async (req: Request, res: Response): Promise< void> => {
     try {
@@ -19,5 +19,19 @@ const recordPaymentController = async (req: Request, res: Response): Promise< vo
         res.status(500).json({ message: "Failed to record payment", error: (error as Error).message });
     }
 };
+const closePaymentsForTheDay = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id: collectorId } = req.user; // Get collector's ID from request
 
-export { recordPaymentController };
+        await finishPaymentsForTheDay(collectorId); // Pass collectorId
+
+        res.status(200).json({ message: "Closed all Payments for today" });
+    } catch (error) {
+        res.status(500).json({
+            message: "Failed to close Payments for today",
+            error: (error as Error).message,
+        });
+    }
+};
+
+export { recordPaymentController,closePaymentsForTheDay };

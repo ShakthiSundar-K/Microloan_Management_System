@@ -61,7 +61,7 @@ model Loans {
   upfrontDeductedAmount Decimal    @db.Decimal(10, 2) // Deducted amount at the time of loan issuance
   dueDate               DateTime? // Due date of the loan
   dailyRepaymentAmount  Decimal    @db.Decimal(10, 2) // Amount to be repaid daily
-  pendingAmount         Decimal    @db.Decimal(10, 2) // Remaining amount to be repaid
+  pendingAmount         Decimal    @default(0.00) @db.Decimal(10, 2) // Ensure non-negative value
   daysToRepay           String[] // Tracks missed/due payment days for analysis
   status                LoanStatus @default(Active) // Current status of the loan
   issuedAt              DateTime   @default(now()) // Timestamp when the loan was issued
@@ -105,6 +105,9 @@ enum RepaymentStatus {
   Paid // Repayment was successfully made
   Unpaid // Repayment is still due
   Missed // Repayment was missed
+  Paid_Late // Repayment was made after the due date
+  Paid_in_Advance // Repayment was made before the due date
+  Paid_Partial // Partial repayment was made
 }
 
 /// RiskAssessment table calculates and stores risk scores for borrowers.
