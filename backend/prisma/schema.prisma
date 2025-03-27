@@ -59,8 +59,7 @@ model Loans {
   issuedById            String // References the lender who issued the loan
   principalAmount       Decimal    @db.Decimal(10, 2) // Original loan amount
   upfrontDeductedAmount Decimal    @db.Decimal(10, 2) // Deducted amount at the time of loan issuance
-  repaymentPeriodDays   Int // Total number of days for repayment
-  dueDate               DateTime // Due date of the loan
+  dueDate               DateTime? // Due date of the loan
   dailyRepaymentAmount  Decimal    @db.Decimal(10, 2) // Amount to be repaid daily
   pendingAmount         Decimal    @db.Decimal(10, 2) // Remaining amount to be repaid
   daysToRepay           String[] // Tracks missed/due payment days for analysis
