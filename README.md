@@ -22,8 +22,7 @@ Lenders manage borrowers, issue loans, track repayments, and analyze financial d
 - Loan Status Tracking (Monitor ongoing loans)  
 - Check Borrower Pending Amount  
 - Record Payment (Register daily repayments)  
-- Track Payments (Monitor payment history)  
-- View Payment History Log
+- View Payment History Log both for each borrower and laon
 
 ### **Financial Analysis & Insights**  
 - Export Data to Excel (For reporting and record-keeping)
