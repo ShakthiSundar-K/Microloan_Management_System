@@ -1,55 +1,75 @@
 import prisma from "../config/prismaClient";
 
-const recordPayment = async (borrowerId: string, loanId: string, amountPaid: number, collectedById: string) => {
+const recordPayment = async (
+    borrowerId: string, 
+    loanId: string, 
+    amountPaid: number, 
+    collectedById: string
+) => {
     return await prisma.$transaction(async (tx) => {
         const today = new Date();
-        today.setHours(0, 0, 0, 0); // Normalize to start of the day (ignore time)
-
-       
+        today.setHours(0, 0, 0, 0); // Normalize today's date
 
         let remainingAmount = amountPaid;
         let updates = [];
 
-        // **Step 1: Process PENDING repayments first**
-        const pendingRepayments = await tx.repayments.findMany({
-            where: { borrowerId, loanId, isPending: true },
-            orderBy: { dueDate: "asc" },
-        });
+        console.log("🔍 Fetching repayments...");
 
+        // **1️⃣ Fetch repayments in correct order**
+        const [unpaidToday, missedOrPending, futureRepayments] = await Promise.all([
+            tx.repayments.findFirst({
+                where: {
+                    borrowerId,
+                    loanId,
+                    status: "Unpaid",
+                    dueDate: { gte: today, lt: new Date(today.getTime() + 86400000) }, // Only today's repayments
+                },
+                orderBy: { dueDate: "asc" },
+            }),
+            tx.repayments.findMany({
+                where: {
+                    borrowerId,
+                    loanId,
+                    OR: [{ status: "Missed" }, { isPending: true }],
+                },
+                orderBy: { dueDate: "asc" },
+            }),
+            tx.repayments.findMany({
+                where: {
+                    borrowerId,
+                    loanId,
+                    status: "Unpaid",
+                    dueDate: { gt: today },
+                },
+                orderBy: { dueDate: "asc" },
+            }),
+        ]);
 
-        for (let repayment of pendingRepayments) {
-            if (remainingAmount <= 0) break;
+        console.log("🔍 Today's Unpaid Repayment:", unpaidToday);
+        console.log("🔍 Missed/Pending Repayments:", missedOrPending);
 
-            let dueAmount = repayment.amountToPay.toNumber() - repayment.amountPaid.toNumber();
-            let amountToSettle = Math.min(dueAmount, remainingAmount);
-            remainingAmount -= amountToSettle;
+        // **2️⃣ Step 1: Process Today's Unpaid Repayment First**
+        if (unpaidToday && remainingAmount > 0) {
+            console.log(`🟠 Processing today's repayment: ${unpaidToday.repaymentId}`);
+            
+            let alreadyPaid = unpaidToday.amountPaid.toNumber();
+            let due = unpaidToday.amountToPay.toNumber() - alreadyPaid;
+            let toPay = Math.min(remainingAmount, due);
+            remainingAmount -= toPay;
 
-            let newTotalPaid = repayment.amountPaid.toNumber() + amountToSettle;
-            let wasMissed = repayment.status === "Missed";
-            let isFullyPaid = newTotalPaid >= repayment.amountToPay.toNumber();
+            let totalPaid = alreadyPaid + toPay;
+            let isFullyPaid = totalPaid >= unpaidToday.amountToPay.toNumber();
 
-            //  Compare only the date part of `dueDate`
-            let dueDateOnly = new Date(repayment.dueDate).setHours(0, 0, 0, 0);
-            let paidDateOnly = today.getTime(); // `today` is normalized to 00:00:00
+            let newStatus = isFullyPaid ? "Paid" : "Unpaid";
+            let isPending = !isFullyPaid;
 
-            let isLatePayment = paidDateOnly > dueDateOnly;
-            let isFuturePayment = paidDateOnly < dueDateOnly;
-
-            let newStatus = isFullyPaid
-                ? isFuturePayment
-                    ? "Paid_in_Advance"
-                    : isLatePayment
-                    ? "Paid_Late"
-                    : "Paid"
-                : "Unpaid";
-
-        
+            console.log(`➡️ Updating repayment ${unpaidToday.repaymentId}: ${newStatus}, Amount Paid: ${toPay}`);
 
             updates.push(tx.repayments.update({
-                where: { repaymentId: repayment.repaymentId },
+                where: { repaymentId: unpaidToday.repaymentId },
                 data: {
-                    amountPaid: newTotalPaid,
-                    isPending: !isFullyPaid,
+                    amountPaid: totalPaid,
+                    isPending,
                     paidDate: new Date(),
                     collectedBy: collectedById,
                     status: newStatus,
@@ -57,64 +77,93 @@ const recordPayment = async (borrowerId: string, loanId: string, amountPaid: num
             }));
         }
 
-        // **Step 2: If all pending payments are cleared, process "Unpaid" repayments**
-        if (remainingAmount > 0) {
-            const unpaidRepayments = await tx.repayments.findMany({
-                where: { borrowerId, loanId, status: "Unpaid" },
-                orderBy: { dueDate: "asc" },
-            });
+        // **3️⃣ Step 2: Process Missed/Pending Repayments**
+        for (const repayment of missedOrPending) {
+            if (remainingAmount <= 0) break;
 
+            console.log(`🟠 Processing missed/pending repayment: ${repayment.repaymentId}`);
 
-            for (let repayment of unpaidRepayments) {
-                if (remainingAmount <= 0) break;
+            let alreadyPaid = repayment.amountPaid.toNumber();
+            let due = repayment.amountToPay.toNumber() - alreadyPaid;
+            let toPay = Math.min(remainingAmount, due);
+            remainingAmount -= toPay;
 
-                let dueAmount = repayment.amountToPay.toNumber() - repayment.amountPaid.toNumber();
-                let amountToSettle = Math.min(dueAmount, remainingAmount);
-                remainingAmount -= amountToSettle;
+            let totalPaid = alreadyPaid + toPay;
+            let isFullyPaid = totalPaid >= repayment.amountToPay.toNumber();
 
-                let newTotalPaid = repayment.amountPaid.toNumber() + amountToSettle;
-                let isFullyPaid = newTotalPaid >= repayment.amountToPay.toNumber();
-
-                //  Compare only the date part of `dueDate`
-                let dueDateOnly = new Date(repayment.dueDate).setHours(0, 0, 0, 0);
-                let paidDateOnly = today.getTime(); // `today` is normalized
-
-                let isLatePayment = paidDateOnly > dueDateOnly;
-                let isFuturePayment = paidDateOnly < dueDateOnly;
-
-                let newStatus = isFullyPaid
-                    ? isFuturePayment
-                        ? "Paid_in_Advance"
-                        : isLatePayment
-                        ? "Paid_Late"
-                        : "Paid"
-                    : "Unpaid";
-
-
-                updates.push(tx.repayments.update({
-                    where: { repaymentId: repayment.repaymentId },
-                    data: {
-                        amountPaid: newTotalPaid,
-                        isPending: !isFullyPaid,
-                        paidDate: new Date(),
-                        collectedBy: collectedById,
-                        status: newStatus,
-                    },
-                }));
+            // 🔹 **Compare DueDate with Today**
+            let newStatus;
+            if (isFullyPaid) {
+                newStatus = repayment.dueDate < today ? "Paid_Late" : "Paid_in_Advance";
+            } else {
+                newStatus = repayment.dueDate < today ? "Missed" : "Unpaid";
             }
+
+            let isPending = !isFullyPaid;
+
+            console.log(`➡️ Updating repayment ${repayment.repaymentId}: ${newStatus}, Amount Paid: ${toPay}`);
+
+            updates.push(tx.repayments.update({
+                where: { repaymentId: repayment.repaymentId },
+                data: {
+                    amountPaid: totalPaid,
+                    isPending,
+                    paidDate: new Date(),
+                    collectedBy: collectedById,
+                    status: newStatus,
+                },
+            }));
         }
 
-        // **Step 3: If no updates happened, throw an error**
+
+        // **4️⃣ Step 3: Process Future Repayments (Paid in Advance)**
+        for (const repayment of futureRepayments) {
+            if (remainingAmount <= 0) break;
+
+            console.log(`🟠 Processing future repayment: ${repayment.repaymentId}`);
+
+            let alreadyPaid = repayment.amountPaid.toNumber();
+            let due = repayment.amountToPay.toNumber() - alreadyPaid;
+            let toPay = Math.min(remainingAmount, due);
+            remainingAmount -= toPay;
+
+            let totalPaid = alreadyPaid + toPay;
+            let isFullyPaid = totalPaid >= repayment.amountToPay.toNumber();
+
+            let newStatus = isFullyPaid ? "Paid_in_Advance" : "Unpaid";
+            let isPending = !isFullyPaid;
+
+            console.log(`➡️ Updating repayment ${repayment.repaymentId}: ${newStatus}, Amount Paid: ${toPay}`);
+
+            updates.push(tx.repayments.update({
+                where: { repaymentId: repayment.repaymentId },
+                data: {
+                    amountPaid: totalPaid,
+                    isPending,
+                    paidDate: new Date(),
+                    collectedBy: collectedById,
+                    status: newStatus,
+                },
+            }));
+        }
+
+        // ❌ **Throw error if nothing was updated**
         if (!updates.length) {
-            throw new Error("⚠️ Payment amount does not match any pending repayments.");
+            throw new Error("⚠️ No valid repayments to update for this amount.");
         }
 
-        // **Step 4: Update Loan Balance**
+        // **5️⃣ Update Loan Balance**
+        console.log("🔄 Updating Loan Balance...");
         await tx.$executeRaw`UPDATE "Loans" SET "pendingAmount" = "pendingAmount" - ${amountPaid} WHERE "loanId" = ${loanId}`;
 
-        await Promise.all(updates); // Execute all updates
+        await Promise.all(updates);
     });
 };
+
+
+
+
+
 
 
 
