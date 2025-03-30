@@ -1,5 +1,5 @@
 import {Request, Response} from "express";
-import {createBorrower,getAllBorrowers,getBorrowerByPhoneNumber,deleteBorrower,updateBorrowerPassword,getBorrowerByName} from "../models/borrowerModel";
+import {getBorrowerDetails,createBorrower,getAllBorrowers,getBorrowerByPhoneNumber,deleteBorrower,updateBorrowerPassword,getBorrowerByName,searchBorrowers} from "../models/borrowerModel";
 
 // Middleware to check if the user is a LENDER
 const isLender = (req: Request, res: Response): boolean => {
@@ -88,4 +88,45 @@ const deleteBorrowerController = async (req: Request, res: Response) => {
     }
 };
 
-export { createBorrowerController, getAllBorrowersController, getBorrowerByNameController, getBorrowerByPhoneNumberController, updateBorrowerPasswordController, deleteBorrowerController };
+
+ const getBorrowers = async (req: Request, res: Response) => {
+    if (!isLender(req, res)) return;
+    try {
+        const { query } = req.query; // Extract search query
+
+        if (!query || typeof query !== "string") {
+            res.status(400).json({ message: "Invalid search query" });
+            return;
+        }
+
+        const borrowers = await searchBorrowers(query);
+
+        if (borrowers.length === 0) {
+            res.status(404).json({ message: "No borrowers found" });
+            return;
+        }
+
+        res.status(200).json({ message: "Borrowers found", data:borrowers });
+    } catch (error) {
+        res.status(500).json({ message: "Error searching borrowers", error: (error as Error).message  });
+    }
+};
+
+const getBorrowerInfo = async (req: Request, res: Response) => {
+    if (!isLender(req, res)) return;
+    try {
+        const { borrowerId } = req.query;
+
+        if (!borrowerId || typeof borrowerId !== "string") {
+            res.status(400).json({ message: "Invalid borrowerId" });
+        }
+
+        const borrowerData = await getBorrowerDetails(borrowerId as string);
+
+        res.status(200).json({ message: "Borrower details fetched successfully", data: borrowerData });
+    } catch (error) {
+        res.status(500).json({ message: "Error fetching borrower details", error: (error as Error).message  });
+    }
+};
+
+export { getBorrowerInfo,createBorrowerController, getAllBorrowersController, getBorrowerByNameController, getBorrowerByPhoneNumberController, updateBorrowerPasswordController, deleteBorrowerController,getBorrowers };

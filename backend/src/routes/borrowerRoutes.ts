@@ -1,6 +1,6 @@
 import express, { Router } from "express";
 import { protect } from "../middleware/authMiddleware";
-import {createBorrowerController,getBorrowerByNameController,getAllBorrowersController,getBorrowerByPhoneNumberController,updateBorrowerPasswordController,deleteBorrowerController} from "../controllers/borrowerController"
+import {getBorrowerInfo,createBorrowerController,getBorrowerByNameController,getAllBorrowersController,getBorrowerByPhoneNumberController,updateBorrowerPasswordController,deleteBorrowerController,getBorrowers} from "../controllers/borrowerController"
 
 const router = express.Router();
 
@@ -15,5 +15,9 @@ router.get("/getByName",protect, getBorrowerByNameController);
 router.put("/updatePassword",protect, updateBorrowerPasswordController);
 
 router.delete("/delete/:borrowerId",protect, deleteBorrowerController);
+
+router.get("/search", protect,getBorrowers);
+
+router.get("/borrower-details",protect, getBorrowerInfo);
 
 export default router;

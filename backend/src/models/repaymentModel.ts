@@ -162,14 +162,6 @@ const recordPayment = async (
 
 
 
-
-
-
-
-
-
-
-
 const finishPaymentsForTheDay = async (collectorId: string) => {
     return await prisma.$transaction(async (tx) => {
         const today = new Date();
@@ -202,5 +194,33 @@ const finishPaymentsForTheDay = async (collectorId: string) => {
     });
 };
 
+const getTodayRepayments = async () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Normalize time
 
-export { recordPayment , finishPaymentsForTheDay};
+    return await prisma.repayments.findMany({
+        where: {
+            dueDate: {
+                gte: today, 
+                lt: new Date(today.getTime() + 86400000) // End of today
+            },
+            status: "Unpaid"
+        },
+        select: {
+            loanId: true,
+            borrowerId: true,
+            amountToPay: true,
+            borrower: {
+                select: {
+                    name: true,
+                    phoneNumber: true,
+                    address: true
+                }
+            }
+        }
+    });
+};
+
+
+
+export { recordPayment , finishPaymentsForTheDay,getTodayRepayments};
