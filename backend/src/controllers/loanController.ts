@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { issueLoan } from "../models/loanModel";
+import { issueLoan,getFilteredLoans } from "../models/loanModel";
 
 const issueLoanController = async (req: Request, res: Response):Promise<Response|void> => {
     try {
@@ -18,6 +18,17 @@ const issueLoanController = async (req: Request, res: Response):Promise<Response
     }
 };
 
-export { issueLoanController };
+ const filterLoans = async (req: Request, res: Response) => {
+    try {
+        const query = req.query; // Get query params
+        const loans = await getFilteredLoans(query);
+        res.json({ success: true, loans });
+    } catch (error) {
+        console.error("Error fetching loans:", error);
+        res.status(500).json({ success: false, message: "Internal server error" });
+    }
+};
+
+export { issueLoanController,filterLoans };
 
 

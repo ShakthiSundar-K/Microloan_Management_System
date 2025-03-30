@@ -167,4 +167,4 @@ const getFilteredLoans = async (filters: any) => {
 
 
 
-export { issueLoan };
+export { issueLoan,getFilteredLoans };
