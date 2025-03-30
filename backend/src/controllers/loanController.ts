@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { issueLoan,getFilteredLoans } from "../models/loanModel";
+import { issueLoan,getFilteredLoans,getLoanDetails } from "../models/loanModel";
 
 const issueLoanController = async (req: Request, res: Response):Promise<Response|void> => {
     try {
@@ -20,15 +20,28 @@ const issueLoanController = async (req: Request, res: Response):Promise<Response
 
  const filterLoans = async (req: Request, res: Response) => {
     try {
-        const query = req.query; // Get query params
-        const loans = await getFilteredLoans(query);
-        res.json({ success: true, loans });
+        const filters = req.query; 
+        const loans = await getFilteredLoans(filters);
+        res.json({ message: "Loans fetched successfully", data: loans });
     } catch (error) {
-        console.error("Error fetching loans:", error);
-        res.status(500).json({ success: false, message: "Internal server error" });
+        res.status(500).json({ message: "Error fetching loans", error: (error as Error).message });
     }
 };
 
-export { issueLoanController,filterLoans };
+ const fetchLoanDetails = async (req: Request, res: Response) => {
+    try {
+        const { loanId } = req.params;
+        if (!loanId) {
+            return res.status(400).json({ error: "Valid loanId is required" });
+        }
+
+        const loanDetails = await getLoanDetails(loanId as string);
+        res.status(200).json({ message: "Loan details fetched successfully", data: loanDetails });
+    } catch (error: any) {
+        res.status(500).json({ message: "Error fetching loan details", error: (error as Error).message });
+    }
+};
+
+export { issueLoanController,filterLoans,fetchLoanDetails};
 
 

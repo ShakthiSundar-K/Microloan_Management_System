@@ -165,6 +165,53 @@ const getFilteredLoans = async (filters: any) => {
     return loans;
 };
 
+const getLoanDetails = async (loanId: string) => {
+    // Fetch loan details with borrower
+    const loan = await prisma.loans.findUnique({
+        where: { loanId },
+        select: {
+            loanId: true,
+            principalAmount: true,
+            pendingAmount: true,
+            issuedAt: true,
+            status: true,
+            dueDate: true,
+            daysToRepay: true,
+            borrower: {
+                select: {
+                    borrowerId: true,
+                    name: true,
+                    phoneNumber: true,
+                    address: true,
+                },
+            },
+        },
+    });
 
+    if (!loan) {
+        throw new Error("Loan not found");
+    }
 
-export { issueLoan,getFilteredLoans };
+    // Get repayment breakdown for the loan
+    const repaymentCounts = await prisma.repayments.groupBy({
+        by: ["status"],
+        where: { loanId },
+        _count: true,
+    });
+
+    const repaymentStats = {
+        totalRepayments: repaymentCounts.reduce((sum, rep) => sum + rep._count, 0),
+        paid: repaymentCounts.find((r) => r.status === "Paid")?._count || 0,
+        unpaid: repaymentCounts.find((r) => r.status === "Unpaid")?._count || 0,
+        missed: repaymentCounts.find((r) => r.status === "Missed")?._count || 0,
+        paidLate: repaymentCounts.find((r) => r.status === "Paid_Late")?._count || 0,
+        paidInAdvance: repaymentCounts.find((r) => r.status === "Paid_in_Advance")?._count || 0,
+    };
+
+    return {
+        loan,
+        repaymentStats,
+    };
+};
+
+export { issueLoan,getFilteredLoans,getLoanDetails };
