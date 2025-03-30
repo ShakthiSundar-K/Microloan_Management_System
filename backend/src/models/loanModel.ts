@@ -105,7 +105,65 @@ const generateRepaymentSchedule = (
 
 
 
+const getFilteredLoans = async (filters: any) => {
+    const {
+        status,
+        minPrincipalAmt,
+        maxPrincipalAmt,
+        minPendingAmt,
+        maxPendingAmt,
+        dueDate,
+        daysToRepay // Array of days like ["Monday", "Tuesday", ...]
+    } = filters;
 
+    let whereClause: any = {}; // Dynamic filter object
+
+    if (status) whereClause.status = status;
+
+    if (minPrincipalAmt || maxPrincipalAmt) {
+        whereClause.principalAmount = {};
+        if (minPrincipalAmt) whereClause.principalAmount.gte = parseFloat(minPrincipalAmt);
+        if (maxPrincipalAmt) whereClause.principalAmount.lte = parseFloat(maxPrincipalAmt);
+    }
+
+    if (minPendingAmt || maxPendingAmt) {
+        whereClause.pendingAmount = {};
+        if (minPendingAmt) whereClause.pendingAmount.gte = parseFloat(minPendingAmt);
+        if (maxPendingAmt) whereClause.pendingAmount.lte = parseFloat(maxPendingAmt);
+    }
+
+    if (dueDate) whereClause.dueDate = { lte: new Date(dueDate) }; // Loans due before given date
+
+    // Ensure all selected days are present in the loan's `daysToRepay`
+    if (daysToRepay && Array.isArray(daysToRepay) && daysToRepay.length > 0) {
+        whereClause.daysToRepay = { hasEvery: daysToRepay }; // Match loans containing ALL the selected days
+    }
+
+    // Fetch loans with borrower details
+    const loans = await prisma.loans.findMany({
+        where: whereClause,
+        orderBy: { issuedAt: "desc" }, // Latest loans first
+        select: {
+            loanId: true,
+            principalAmount: true,
+            pendingAmount: true,
+            issuedAt: true,
+            status: true,
+            dueDate: true,
+            daysToRepay: true,
+            borrower: {
+                select: {
+                    borrowerId: true,
+                    name: true,
+                    phoneNumber: true,
+                    address: true,
+                },
+            }
+        },
+    });
+
+    return loans;
+};
 
 
 
