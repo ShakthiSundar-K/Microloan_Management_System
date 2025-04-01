@@ -45,9 +45,10 @@ model Borrowers {
   updatedAt    DateTime @updatedAt // Timestamp automatically updated on modification
 
   // Relationships
-  loansTaken     Loans[] // Loans taken by this borrower
-  repaymentsMade Repayments[] // Repayments made by this borrower
-  riskAssessment RiskAssessment? // Risk assessment score for this borrower
+  loansTaken       Loans[] // Loans taken by this borrower
+  repaymentsMade   Repayments[] // Repayments made by this borrower
+  riskAssessment   RiskAssessment? // Risk assessment score for this borrower
+  RepaymentHistory RepaymentHistory[]
 
   @@index([name]) // Index on name to improve query performance
 }
@@ -172,4 +173,15 @@ model CapitalUtilization {
 
   // Relationship
   user Users @relation(fields: [userId], references: [userId]) // Links to lender
+}
+
+model RepaymentHistory {
+  id         String   @id @default(uuid())
+  borrowerId String
+  name       String
+  amountPaid Decimal  @db.Decimal(10, 2)
+  paidDate   DateTime
+  createdAt  DateTime @default(now()) // Timestamp when the record was created
+
+  borrower Borrowers @relation(fields: [borrowerId], references: [borrowerId])
 }

@@ -10,6 +10,12 @@ const recordPayment = async (
         const today = new Date();
         today.setHours(0, 0, 0, 0); // Normalize today's date
 
+        const borrower = await tx.borrowers.findUnique({
+            where: { borrowerId },
+            select: { name: true },
+        });
+
+        if (!borrower) throw new Error("⚠️ Borrower not found.");
         let remainingAmount = amountPaid;
         let updates = [];
 
@@ -155,6 +161,15 @@ const recordPayment = async (
         // **5️⃣ Update Loan Balance**
         console.log("🔄 Updating Loan Balance...");
         await tx.$executeRaw`UPDATE "Loans" SET "pendingAmount" = "pendingAmount" - ${amountPaid} WHERE "loanId" = ${loanId}`;
+
+        await tx.repaymentHistory.create({
+            data: {
+                borrowerId,
+                name: borrower.name,
+                amountPaid,
+                paidDate: new Date(),
+            },
+        });
 
         await Promise.all(updates);
     });
