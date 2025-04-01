@@ -7,7 +7,7 @@ import prisma from "../config/prismaClient";
  * @param startDate Optional - Custom start date
  * @param endDate Optional - Custom end date
  */
- const getRepaymentHistory = async (filterType: string = "week", startDate?: string, endDate?: string) => {
+const getRepaymentHistory = async (filterType: string = "week", startDate?: string, endDate?: string, minAmount?: number, maxAmount?: number) => {
     const today = new Date();
     let fromDate: Date;
     let toDate: Date = today;
@@ -42,6 +42,10 @@ import prisma from "../config/prismaClient";
                 gte: fromDate,
                 lte: toDate,
             },
+            amountPaid: {
+                gte: minAmount || 0,  // Filter by minimum amount if provided
+                lte: maxAmount || Number.MAX_VALUE, // Filter by maximum amount if provided
+            }
         },
         orderBy: { paidDate: "desc" },
         select: {
@@ -72,5 +76,6 @@ import prisma from "../config/prismaClient";
 
     return groupedHistory;
 };
+
 
 export { getRepaymentHistory };
