@@ -23,3 +23,5 @@ export const fetchRepaymentHistory = async (req: Request, res: Response) => {
         res.status(500).json({ message: "Failed to fetch repayment history", error: (error as Error).message });
     }
 };
+
+

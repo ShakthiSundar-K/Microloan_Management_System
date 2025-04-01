@@ -214,4 +214,83 @@ const getLoanDetails = async (loanId: string) => {
     };
 };
 
-export { issueLoan,getFilteredLoans,getLoanDetails };
+
+
+
+ const getLoanHistory = async (
+    filterType: string = "week", 
+    startDate?: string, 
+    endDate?: string,
+    minAmount?: string,
+    maxAmount?: string
+) => {
+    const today = new Date();
+    let fromDate: Date;
+    let toDate: Date = today;
+    // **Determine the time range based on filterType**
+    switch (filterType) {
+        case "24h":
+            fromDate = new Date(today);
+            fromDate.setDate(today.getDate() - 1); // Last 24 hours
+            break;
+        case "week":
+            fromDate = new Date(today);
+            fromDate.setDate(today.getDate() - 7); // Last week (DEFAULT)
+            break;
+        case "month":
+            fromDate = new Date(today);
+            fromDate.setMonth(today.getMonth() - 1); // Last month
+            break;
+        case "custom":
+            if (!startDate || !endDate) throw new Error("Custom date range requires startDate and endDate.");
+            fromDate = new Date(startDate);
+            toDate = new Date(endDate);
+            break;
+        default:
+            throw new Error("Invalid filter type. Use '24h', 'week', 'month', or 'custom'.");
+    }
+
+
+    // **Build the filter for amounts**
+    let amountFilter: any = {};
+    if (minAmount) {
+        amountFilter.gte = Number(minAmount); // Greater than or equal to minAmount
+    }
+    if (maxAmount) {
+        amountFilter.lte = Number(maxAmount); // Less than or equal to maxAmount
+    }
+
+    // **Fetch loan history from DB**
+    const loanHistory = await prisma.loans.findMany({
+        where: {
+            issuedAt: {
+                gte: fromDate,
+                lte: toDate,
+            },
+            principalAmount: amountFilter, // Filter loans by amount
+        },
+        orderBy: { issuedAt: "desc" },
+        select: {
+            loanId: true,
+            principalAmount: true,
+            borrower: {
+                select: {
+                    borrowerId: true,
+                    name: true,
+                },
+            },
+        },
+    });
+
+    // **If no loans found**
+    if (loanHistory.length === 0) {
+        throw new Error("Loan not found");
+    }
+
+    // **Return the loan history**
+    return loanHistory;
+};
+
+
+
+export { issueLoan,getFilteredLoans,getLoanDetails,getLoanHistory };

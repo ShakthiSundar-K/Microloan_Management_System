@@ -29,7 +29,7 @@ export const protect = async (req: Request, res: Response, next: NextFunction): 
         
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         req.user = decoded; // Assign the decoded payload to req.user
-
+        // console.log("success from auth middleware")
         next(); // Move to the next middleware/controller
     } catch (error) {
         res.status(401).json({ message: "Invalid token, authorization denied" });

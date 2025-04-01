@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { issueLoan,getFilteredLoans,getLoanDetails } from "../models/loanModel";
+import { issueLoan,getFilteredLoans,getLoanDetails,getLoanHistory } from "../models/loanModel";
 
 const issueLoanController = async (req: Request, res: Response):Promise<Response|void> => {
     try {
@@ -42,6 +42,27 @@ const issueLoanController = async (req: Request, res: Response):Promise<Response
     }
 };
 
-export { issueLoanController,filterLoans,fetchLoanDetails};
+
+const fetchLoanHistory = async (req: Request, res: Response) => {
+    try {
+        const { filterType, startDate, endDate, minAmount, maxAmount } = req.query;
+        // Fetch the loan history
+        const history = await getLoanHistory(
+            filterType as string || "week", 
+            startDate as string, 
+            endDate as string, 
+            minAmount as string, 
+            maxAmount as string
+        );
+
+        // Return the loan history
+        res.json({ message: "Loan history fetched successfully", data: history });
+    } catch (error) {
+        console.log("Error in fetchLoanHistory", error); // Log the error
+        res.status(500).json({ message: "Failed to fetch loan history", error: (error as Error) });
+    }
+};
+
+export { issueLoanController,filterLoans,fetchLoanDetails,fetchLoanHistory};
 
 
