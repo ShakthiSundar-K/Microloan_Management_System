@@ -215,9 +215,7 @@ const getLoanDetails = async (loanId: string) => {
 };
 
 
-
-
- const getLoanHistory = async (
+const getLoanHistory = async (
     filterType: string = "week", 
     startDate?: string, 
     endDate?: string,

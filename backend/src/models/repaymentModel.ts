@@ -168,6 +168,7 @@ const recordPayment = async (
                 name: borrower.name,
                 amountPaid,
                 paidDate: new Date(),
+                
             },
         });
 
@@ -237,5 +238,45 @@ const getTodayRepayments = async () => {
 };
 
 
+const getTodayCollectionStatus = async () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Set to the start of the day
 
-export { recordPayment , finishPaymentsForTheDay,getTodayRepayments};
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1); // Set to the next day (for the "end of today" boundary)
+
+    // Get Amount Collected Today
+    const amountCollectedToday = await prisma.repaymentHistory.aggregate({
+        where: {
+            paidDate: {
+                gte: today,
+                lt: tomorrow, // Only today
+            },
+        },
+        _sum: {
+            amountPaid: true,
+        },
+    });
+
+    // Get Amount Supposed to be Collected Today
+    const amountSupposedToBeCollectedToday = await prisma.repayments.aggregate({
+        where: {
+            dueDate: {
+                gte: today,
+                lt: tomorrow, // Only today
+            },
+        },
+        _sum: {
+            amountToPay: true,
+        },
+    });
+
+    // Return the data
+    return {
+        amountCollectedToday: amountCollectedToday._sum.amountPaid || 0,
+        amountSupposedToBeCollectedToday: amountSupposedToBeCollectedToday._sum.amountToPay || 0,
+    };
+};
+
+
+export { recordPayment , finishPaymentsForTheDay,getTodayRepayments,getTodayCollectionStatus};

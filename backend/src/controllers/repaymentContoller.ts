@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { recordPayment,finishPaymentsForTheDay ,getTodayRepayments} from "../models/repaymentModel";
+import { recordPayment,finishPaymentsForTheDay ,getTodayRepayments,getTodayCollectionStatus} from "../models/repaymentModel";
 
 const recordPaymentController = async (req: Request, res: Response): Promise< void> => {
     try {
@@ -51,4 +51,24 @@ const fetchTodayRepayments = async (req: Request, res: Response) :Promise<void>=
     }
 };
 
-export { recordPaymentController,closePaymentsForTheDay ,fetchTodayRepayments};
+
+const fetchTodayCollectionStatus = async (req: Request, res: Response) => {
+    try {
+        // Fetch the collection status for today
+        const status = await getTodayCollectionStatus();
+
+        // Return the status to the client
+        res.json({
+            message: "Today's collection status fetched successfully",
+            data: status,
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: "Failed to fetch today's collection status",
+            error: (error as Error).message,
+        });
+    }
+};
+
+
+export { recordPaymentController,closePaymentsForTheDay ,fetchTodayRepayments,fetchTodayCollectionStatus};
