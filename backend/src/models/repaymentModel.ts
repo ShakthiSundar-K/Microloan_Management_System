@@ -244,10 +244,11 @@ const getTodayRepayments = async () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Normalize time
 
-    return await prisma.repayments.findMany({
+    // 🔹 Step 1: Get today's scheduled repayments
+    const todayRepayments = await prisma.repayments.findMany({
         where: {
             dueDate: {
-                gte: today, 
+                gte: today,
                 lt: new Date(today.getTime() + 86400000) // End of today
             },
             status: "Unpaid"
@@ -256,6 +257,14 @@ const getTodayRepayments = async () => {
             loanId: true,
             borrowerId: true,
             amountToPay: true,
+            dueDate: true,
+            status: true,
+            loan: {
+                select: {
+                    pendingAmount: true,
+                    dueDate: true,
+                }
+            },
             borrower: {
                 select: {
                     name: true,
@@ -265,6 +274,52 @@ const getTodayRepayments = async () => {
             }
         }
     });
+
+    // 🔹 Step 2: Fetch loans that still have pending amounts (Overdue loans)
+    const overdueLoans = await prisma.loans.findMany({
+        where: {
+            pendingAmount: { gt: 0 }, // Loan still has pending amount
+            dueDate: { lt: today } // Loan's due date has passed
+        },
+        select: {
+            loanId: true,
+            borrowerId: true,
+            pendingAmount: true,
+            dueDate: true,
+            borrower: {
+                select: {
+                    name: true,
+                    phoneNumber: true,
+                    address: true
+                }
+            }
+        }
+    });
+
+    // 🔹 Step 3: Fetch the earliest missed repayment for each overdue loan
+    const overdueRepayments = await Promise.all(overdueLoans.map(async (loan) => {
+        const earliestMissedRepayment = await prisma.repayments.findFirst({
+            where: {
+                loanId: loan.loanId,
+                status: "Missed"
+            },
+            orderBy: { dueDate: "asc" } // Get the earliest missed repayment
+        });
+
+        return {
+            loanId: loan.loanId,
+            borrowerId: loan.borrowerId,
+            amountToPay: loan.pendingAmount, // Since no scheduled repayment, show full pending amount
+            dueDate: earliestMissedRepayment ? earliestMissedRepayment.dueDate : loan.dueDate, // Use earliest missed date or loan's due date
+            status: "Overdue",
+            borrower: loan.borrower
+        };
+    }));
+
+    // 🔹 Step 4: Merge results (remove duplicates)
+    const allRepayments = [...todayRepayments, ...overdueRepayments];
+
+    return allRepayments;
 };
 
 
