@@ -2,23 +2,41 @@ import prisma from "../config/prismaClient";
 
 const issueLoan = async (borrowerId: string, issuedById: string, data: any) => {
     await prisma.$transaction(async (tx) => {
-        // Create Loan with dueDate initially set to NULL
+        // 1️⃣ Fetch latest capital record
+        const latestCapital = await tx.capitalTracking.findFirst({
+            where: { userId: issuedById }, 
+            orderBy: { date: "desc" },
+        });
+
+        if (!latestCapital) {
+            throw new Error("No capital record found. Please initialize capital first.");
+        }
+
+        // 2️⃣ Compute new idle capital
+        const newIdleCapital = latestCapital.idleCapital + data.upfrontDeductedAmount - data.principalAmount;
+
+        // 🚨 Prevent lending if idle capital goes negative
+        if (newIdleCapital < 0) {
+            throw new Error("Insufficient idle capital to issue loan");
+        }
+
+        // 3️⃣ Create Loan
         const loan = await tx.loans.create({
             data: {
                 borrowerId,
                 issuedById,
                 principalAmount: data.principalAmount,
-                upfrontDeductedAmount: data.upfrontDeductedAmount, // Sent from frontend
-                dueDate: null, // Initially NULL, will update after repayment schedule generation
+                upfrontDeductedAmount: data.upfrontDeductedAmount,
+                dueDate: null,
                 dailyRepaymentAmount: data.dailyRepaymentAmount,
-                pendingAmount: data.principalAmount, // Initially same as principal
-                daysToRepay: data.daysToRepay, // Received as an array from frontend
+                pendingAmount: data.principalAmount,
+                daysToRepay: data.daysToRepay,
                 status: "Active",
                 issuedAt: new Date(),
             },
         });
 
-        // Generate Repayment Schedule
+        // 4️⃣ Generate Repayment Schedule
         const repaymentRecords = generateRepaymentSchedule(
             loan.loanId,
             borrowerId,
@@ -32,13 +50,11 @@ const issueLoan = async (borrowerId: string, issuedById: string, data: any) => {
             throw new Error("No repayment records generated. Check daysToRepay.");
         }
 
-        // Get last repayment date and update the loan's dueDate
+        // 5️⃣ Get last repayment date and update the loan's dueDate
         const lastRepaymentDate = repaymentRecords[repaymentRecords.length - 1].dueDate;
 
         // Insert Repayment Records
-        await tx.repayments.createMany({
-            data: repaymentRecords,
-        });
+        await tx.repayments.createMany({ data: repaymentRecords });
 
         // Update the loan with the correct dueDate
         await tx.loans.update({
@@ -46,9 +62,33 @@ const issueLoan = async (borrowerId: string, issuedById: string, data: any) => {
             data: { dueDate: lastRepaymentDate },
         });
 
-        return loan; // Return loan details
+        // 6️⃣ Dynamically Calculate Total Pending Loan Amount
+        const pendingLoanAggregate = await tx.loans.aggregate({
+            where: { issuedById: req.user.id }, // Ensure only this user's loans are considered
+            _sum: { pendingAmount: true },
+        });
+
+
+        const pendingLoanAmount = pendingLoanAggregate._sum.pendingAmount || 0;
+
+        // 7️⃣ Calculate new total capital
+        const newTotalCapital = (typeof pendingLoanAmount === "number" ? pendingLoanAmount : pendingLoanAmount.toNumber()) + newIdleCapital;
+
+        // 8️⃣ Update capital tracking
+        await tx.capitalTracking.create({
+            data: {
+                date: new Date(),
+                totalCapital: newTotalCapital,
+                userId: issuedById, 
+                idleCapital: newIdleCapital,
+                pendingLoanAmount: pendingLoanAmount,
+                },
+        });
+
+        return loan;
     });
 };
+
 
 // Function to generate the correct repayment schedule
 const generateRepaymentSchedule = (
@@ -290,5 +330,49 @@ const getLoanHistory = async (
 };
 
 
+ const findLoanById = async (loanId: string) => {
+    return await prisma.loans.findUnique({ where: { loanId } });
+};
 
-export { issueLoan,getFilteredLoans,getLoanDetails,getLoanHistory };
+const createExistingLoan = async (loanData: any) => {
+    return await prisma.loans.create({
+        data: loanData,
+    });
+};
+
+//  Update pending amount for migrated loans
+ const updatePendingAmount = async (loanId: string, newPendingAmount: number) => {
+    return await prisma.loans.update({
+        where: { loanId }, 
+        data: { pendingAmount: newPendingAmount },
+    });
+};
+
+// ✅ Fetch total pending loan amount for a user
+ const getTotalPendingLoanAmount = async (userId: string) => {
+    const pendingLoanAggregate = await prisma.loans.aggregate({
+        where: { issuedById: userId },
+        _sum: { pendingAmount: true },
+    });
+
+    return pendingLoanAggregate._sum.pendingAmount || 0;
+};
+
+// ✅ Create a new capital tracking entry
+ const createCapitalTracking = async (userId: string, idleCapital: number, pendingLoanAmount: number) => {
+    const totalCapital = idleCapital + pendingLoanAmount;
+
+    return await prisma.capitalTracking.create({
+        data: {
+            userId,
+            date: new Date(),
+            totalCapital,
+            idleCapital,
+            pendingLoanAmount,
+            amountCollectedToday: 0, // No collections yet
+        },
+    });
+};
+
+
+export { issueLoan,getFilteredLoans,getLoanDetails,getLoanHistory ,findLoanById,updatePendingAmount,createExistingLoan,getTotalPendingLoanAmount,createCapitalTracking};

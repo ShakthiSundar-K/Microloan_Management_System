@@ -1,4 +1,5 @@
 import prisma from "../config/prismaClient";
+import { Prisma } from "@prisma/client";
 
 const recordPayment = async (
     borrowerId: string, 
@@ -178,37 +179,66 @@ const recordPayment = async (
 
 
 
+const updateIdleCapital = async (tx: Prisma.TransactionClient, today: Date) => {
+    // Get today's collected amount
+    const { _sum } = await tx.repaymentHistory.aggregate({
+        where: { paidDate: today },
+        _sum: { amountPaid: true },
+    });
+
+    const dailyCollectedAmount = _sum.amountPaid || 0;
+
+    if (dailyCollectedAmount === 0) return; // No update needed
+
+    // Fetch latest capital entry
+    const lastCapital = await tx.capitalTracking.findFirst({
+        where: { userId: req.user.id }, // Filter by the specific user
+        orderBy: { date: "desc" }, // Get the latest record for this user
+    });
+
+    if (!lastCapital) {
+        throw new Error("CapitalTracking record not found.");
+    }
+
+    // Update idle capital
+    const newIdleCapital = lastCapital.idleCapital.add(dailyCollectedAmount);
+
+    await tx.capitalTracking.update({
+        where: { id: lastCapital.id },
+        data: { idleCapital: newIdleCapital },
+    });
+};
+
 const finishPaymentsForTheDay = async (collectorId: string) => {
     return await prisma.$transaction(async (tx) => {
         const today = new Date();
         today.setHours(0, 0, 0, 0); // Normalize to start of day
 
-        // Find all repayments due today that are still "Unpaid" and collected by this collector
+        // ✅ Step 1: Update Idle Capital
+        await updateIdleCapital(tx, today);
+
+        // ✅ Step 2: Mark overdue repayments as "Missed"
         const overdueRepayments = await tx.repayments.findMany({
             where: {
                 dueDate: { lte: today },
                 status: "Unpaid",
-                collectedBy: collectorId, // Ensure only this collector's payments are processed
+                collectedBy: collectorId,
             },
         });
 
-        if (overdueRepayments.length === 0) {
-            return; // No updates needed
-        }
+        if (overdueRepayments.length === 0) return; // No updates needed
 
         let updates = overdueRepayments.map((repayment) =>
             tx.repayments.update({
                 where: { repaymentId: repayment.repaymentId },
-                data: {
-                    status: "Missed",
-                    isPending: true,
-                },
+                data: { status: "Missed", isPending: true },
             })
         );
 
         await Promise.all(updates);
     });
 };
+
 
 const getTodayRepayments = async () => {
     const today = new Date();
