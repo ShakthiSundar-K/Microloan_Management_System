@@ -278,6 +278,7 @@ const getTodayRepayments = async () => {
     // 🔹 Step 2: Fetch loans that still have pending amounts (Overdue loans)
     const overdueLoans = await prisma.loans.findMany({
         where: {
+            status: "Active",
             pendingAmount: { gt: 0 }, // Loan still has pending amount
             dueDate: { lt: today } // Loan's due date has passed
         },
