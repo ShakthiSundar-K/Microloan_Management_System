@@ -64,7 +64,7 @@ const issueLoan = async (borrowerId: string, issuedById: string, data: any) => {
 
         // 6️⃣ Dynamically Calculate Total Pending Loan Amount
         const pendingLoanAggregate = await tx.loans.aggregate({
-            where: { issuedById: req.user.id }, // Ensure only this user's loans are considered
+            where: { issuedById: issuedById,status: { not: "Defaulted" } }, // Ensure only this user's loans are considered
             _sum: { pendingAmount: true },
         });
 
@@ -374,5 +374,57 @@ const createExistingLoan = async (loanData: any) => {
     });
 };
 
+ const closeLoanDB = async (loanId: string, userId: string) => {
+    return await prisma.$transaction(async (tx) => {
+        // 1️⃣ Fetch loan details
+        const loan = await tx.loans.findUnique({
+            where: { loanId, issuedById: userId },
+            select: { pendingAmount: true, issuedById: true }
+        });
 
-export { issueLoan,getFilteredLoans,getLoanDetails,getLoanHistory ,findLoanById,updatePendingAmount,createExistingLoan,getTotalPendingLoanAmount,createCapitalTracking};
+        if (!loan) throw new Error("Loan not found");
+
+        // 2️⃣ Determine new status
+        const newStatus = loan.pendingAmount.toNumber() > 0 ? "Defaulted" : "Closed";
+
+        // 3️⃣ Update Loan Status
+        await tx.loans.update({
+            where: { loanId },
+            data: { status: newStatus },
+        });
+
+        // 4️⃣ Remove unpaid repayments for this loan
+        await tx.repayments.deleteMany({
+            where: { loanId, status: {in: ["Unpaid", "Missed"],} },
+        });
+
+        // 5️⃣ If the loan is **defaulted**, adjust capital tracking
+        if (newStatus === "Defaulted") {
+            const latestCapital = await tx.capitalTracking.findFirst({
+                where: { userId },
+                orderBy: { date: "desc" },
+            });
+
+            if (!latestCapital) throw new Error("Capital tracking record not found");
+
+            const newPendingLoanAmount = Number(latestCapital.pendingLoanAmount) - Number(loan.pendingAmount);
+            const newTotalCapital = latestCapital.idleCapital.plus(newPendingLoanAmount);
+
+            await tx.capitalTracking.create({
+                data: {
+                    userId,
+                    date: new Date(),
+                    totalCapital: newTotalCapital,
+                    idleCapital: latestCapital.idleCapital,
+                    pendingLoanAmount: newPendingLoanAmount,
+                    amountCollectedToday: 0,
+                },
+            });
+        }
+
+        return { message: `Loan closed as ${newStatus}` };
+    });
+};
+
+
+export { closeLoanDB,issueLoan,getFilteredLoans,getLoanDetails,getLoanHistory ,findLoanById,updatePendingAmount,createExistingLoan,getTotalPendingLoanAmount,createCapitalTracking};

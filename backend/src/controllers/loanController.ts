@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { issueLoan,getFilteredLoans,getLoanDetails,getLoanHistory ,findLoanById, updatePendingAmount,createExistingLoan,getTotalPendingLoanAmount, createCapitalTracking} from "../models/loanModel";
+import { closeLoanDB,issueLoan,getFilteredLoans,getLoanDetails,getLoanHistory ,findLoanById, updatePendingAmount,createExistingLoan,getTotalPendingLoanAmount, createCapitalTracking} from "../models/loanModel";
 
 const issueLoanController = async (req: Request, res: Response):Promise<Response|void> => {
     try {
@@ -146,6 +146,19 @@ const initializeCapital = async (req: Request, res: Response) => {
     }
 };
 
-export { issueLoanController,filterLoans,fetchLoanDetails,fetchLoanHistory,updatePendingAmountController,registerExistingLoan,initializeCapital};
+const closeLoan = async (req: Request, res: Response) => {
+    const { loanId } = req.params;
+    const userId = req.user.id;
+
+    try {
+        const result = await closeLoanDB(loanId, userId);
+        return res.status(200).json(result);
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: "Failed to close loan" });
+    }
+};
+
+export { issueLoanController,filterLoans,fetchLoanDetails,fetchLoanHistory,updatePendingAmountController,registerExistingLoan,initializeCapital,closeLoan};
 
 
