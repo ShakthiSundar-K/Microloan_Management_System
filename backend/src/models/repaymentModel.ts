@@ -179,64 +179,118 @@ const recordPayment = async (
 
 
 
-const updateIdleCapital = async (tx: Prisma.TransactionClient, today: Date) => {
+const updateIdleCapital = async (tx: Prisma.TransactionClient, today: Date, id: string) => {
     // Get today's collected amount
+    const startOfDay = new Date(today);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(today);
+    endOfDay.setHours(23, 59, 59, 999);
+
     const { _sum } = await tx.repaymentHistory.aggregate({
-        where: { paidDate: today },
+        where: { paidDate: {
+        gte: startOfDay,
+        lte: endOfDay,
+    }, },
         _sum: { amountPaid: true },
     });
-
     const dailyCollectedAmount = _sum.amountPaid || 0;
-
     if (dailyCollectedAmount === 0) return; // No update needed
 
     // Fetch latest capital entry
     const lastCapital = await tx.capitalTracking.findFirst({
-        where: { userId: req.user.id }, // Filter by the specific user
+        where: { userId: id }, // Filter by the specific user
         orderBy: { date: "desc" }, // Get the latest record for this user
     });
-
     if (!lastCapital) {
         throw new Error("CapitalTracking record not found.");
     }
 
     // Update idle capital
     const newIdleCapital = lastCapital.idleCapital.add(dailyCollectedAmount);
+    
+    const pendingLoanAggregate = await tx.loans.aggregate({
+    where: {
+        issuedById: id,
+        status: { not: "Defaulted" },
+    },
+    _sum: {
+        pendingAmount: true,
+    },
+    });
+
+    const newPendingLoanAmount = pendingLoanAggregate._sum.pendingAmount || 0;
+
 
     await tx.capitalTracking.update({
-        where: { id: lastCapital.id },
-        data: { idleCapital: newIdleCapital },
-    });
+    where: { id: lastCapital.id },
+    data: {
+        idleCapital: newIdleCapital,
+        pendingLoanAmount: newPendingLoanAmount,
+        totalCapital: newIdleCapital.add(newPendingLoanAmount),
+        amountCollectedToday:dailyCollectedAmount
+  },
+});
+
 };
 
 const finishPaymentsForTheDay = async (collectorId: string) => {
-    return await prisma.$transaction(async (tx) => {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0); // Normalize to start of day
+  return await prisma.$transaction(async (tx) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Start of today
 
-        // ✅ Step 1: Update Idle Capital
-        await updateIdleCapital(tx, today);
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
 
-        // ✅ Step 2: Mark overdue repayments as "Missed"
-        const overdueRepayments = await tx.repayments.findMany({
-            where: {
-                dueDate: { lte: today },
-                status: "Unpaid",
-                collectedBy: collectorId,
-            },
-        });
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
 
-        if (overdueRepayments.length === 0) return; // No updates needed
-
-        let updates = overdueRepayments.map((repayment) =>
-            tx.repayments.update({
-                where: { repaymentId: repayment.repaymentId },
-                data: { status: "Missed", isPending: true },
-            })
-        );
-
-        await Promise.all(updates);
+    const alreadyClosed = await tx.paymentDayLog.findFirst({
+    where: {
+        userId: collectorId,
+        date: {
+        gte: startOfToday,
+        lte: endOfToday,
+        },
+    },
     });
+    // console.log(alreadyClosed)
+    if (alreadyClosed) {
+      throw new Error("Payments have already been closed for today.");
+    }
+
+    // 2️⃣ Update Idle Capital
+    await updateIdleCapital(tx, today, collectorId);
+
+    // 3️⃣ Mark overdue repayments as "Missed"
+    const overdueRepayments = await tx.repayments.findMany({
+      where: {
+        dueDate: { lte: today },
+        status: "Unpaid",
+        collectedBy: collectorId,
+      },
+    });
+
+    if (overdueRepayments.length > 0) {
+      const updates = overdueRepayments.map((repayment) =>
+        tx.repayments.update({
+          where: { repaymentId: repayment.repaymentId },
+          data: { status: "Missed", isPending: true },
+        })
+      );
+      await Promise.all(updates);
+    }
+
+    // 4️⃣ Log this closing action to prevent duplicates
+    await tx.paymentDayLog.create({
+      data: {
+        userId: collectorId,
+        date: startOfToday,
+      },
+    });
+
+    console.log("✅ Payments successfully closed for today.");
+  });
 };
 
 

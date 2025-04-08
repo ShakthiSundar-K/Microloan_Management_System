@@ -24,6 +24,7 @@ model Users {
   repaymentsCollected Repayments[] // Repayments collected by this user
   financialReports    FinancialSummary[] // Monthly financial reports related to this user
   capitalTracking     CapitalTracking[] // Tracks capital status for this user
+  paymentDayLogs      PaymentDayLog[]
 
   @@index([name]) // Index on name to speed up searches
 }
@@ -181,4 +182,14 @@ model CapitalTracking {
   amountCollectedToday Decimal? @db.Decimal(12, 2) // Amount collected from repayments today
 
   user Users @relation(fields: [userId], references: [userId]) // Links to lender
+}
+
+model PaymentDayLog {
+  id        String   @id @default(uuid())
+  userId    String
+  date      DateTime
+  createdAt DateTime @default(now())
+  users     Users?   @relation(fields: [userId], references: [userId])
+
+  @@unique([userId, date]) // Prevent multiple entries per day per user
 }

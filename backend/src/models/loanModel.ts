@@ -439,10 +439,15 @@ const createExistingLoan = async (loanData: any) => {
 
 const createMigratedLoanWithSchedule = async (loanData: any, repaymentRecords: any[]) => {
   return await prisma.$transaction(async (tx) => {
+    const lastRepaymentDate = repaymentRecords[repaymentRecords.length - 1]?.dueDate;
     // 1️⃣ Create the loan
     const loan = await tx.loans.create({
-      data: loanData,
+      data: {
+        ...loanData,
+        dueDate: lastRepaymentDate, // ✅ Set due date dynamically
+      },
     });
+
 
     // 2️⃣ Attach loanId to each repayment record
     const updatedRepaymentRecords = repaymentRecords.map((record) => ({
