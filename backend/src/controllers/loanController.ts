@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { closeLoanDB,issueLoan,getFilteredLoans,getLoanDetails,getLoanHistory ,findLoanById, updatePendingAmount,createExistingLoan,getTotalPendingLoanAmount, createCapitalTracking} from "../models/loanModel";
+import { createMigratedLoanWithSchedule,generateRepaymentScheduleForMigratedLoan,closeLoanDB,issueLoan,getFilteredLoans,getLoanDetails,getLoanHistory ,findLoanById, updatePendingAmount,createExistingLoan,getTotalPendingLoanAmount, createCapitalTracking} from "../models/loanModel";
 
 const issueLoanController = async (req: Request, res: Response):Promise<Response|void> => {
     try {
@@ -64,34 +64,54 @@ const fetchLoanHistory = async (req: Request, res: Response) => {
 };
 
 const registerExistingLoan = async (req: Request, res: Response) => {
-    const {  principalAmount, pendingAmount, dailyRepaymentAmount, issuedAt, daysToRepay } = req.body;
-    const { borrowerId } = req.params; // Get borrower ID from request parameters
-    const issuedById = req.user.id; // Get lender ID from auth
+  const {
+    principalAmount,
+    pendingAmount,
+    dailyRepaymentAmount,
+    issuedAt,
+    daysToRepay, // e.g., ["Monday", "Tuesday", "Wednesday"]
+  } = req.body;
 
-    if (principalAmount <= 0 || pendingAmount < 0) {
-        return res.status(400).json({ error: "Invalid loan amounts." });
+  const { borrowerId } = req.params;
+  const issuedById = req.user.id;
+
+  if (principalAmount <= 0 || pendingAmount < 0) {
+    return res.status(400).json({ error: "Invalid loan or pending amount." });
+  }
+
+  try {
+    const loanData = {
+      borrowerId,
+      issuedById,
+      principalAmount,
+      pendingAmount,
+      dailyRepaymentAmount,
+      dueDate: null,
+      daysToRepay,
+      status: "Active",
+      issuedAt: new Date(issuedAt),
+      isMigrated: true,
+    };
+
+    const repaymentRecords = generateRepaymentScheduleForMigratedLoan(
+      borrowerId,
+      issuedById,
+      pendingAmount,
+      daysToRepay,
+      dailyRepaymentAmount
+    );
+
+    if (repaymentRecords.length === 0) {
+      return res.status(400).json({ error: "Could not generate repayment schedule." });
     }
 
-    try {
-        const loanData = {
-            borrowerId,
-            issuedById,
-            principalAmount,
-            pendingAmount, // Manually set
-            dailyRepaymentAmount,
-            dueDate: null, // No automatic due date calculation
-            daysToRepay, // Store for reference
-            status: "Active",
-            issuedAt: new Date(issuedAt), // Use user-provided date
-            isMigrated: true, // Mark as an existing loan
-        };
+    const loan = await createMigratedLoanWithSchedule(loanData, repaymentRecords);
 
-        await createExistingLoan(loanData);
-
-        return res.status(201).json({ message: "Existing loan registered successfully" });
-    } catch (error) {
-        return res.status(500).json({ error: "Failed to register existing loan" });
-    }
+    return res.status(201).json({ message: "Migrated loan registered", loan });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Failed to register migrated loan" });
+  }
 };
 
 const updatePendingAmountController = async (req: Request, res: Response) => {

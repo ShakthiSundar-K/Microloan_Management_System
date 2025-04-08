@@ -426,5 +426,87 @@ const createExistingLoan = async (loanData: any) => {
     });
 };
 
+const createMigratedLoanWithSchedule = async (loanData: any, repaymentRecords: any[]) => {
+  return await prisma.$transaction(async (tx) => {
+    // 1️⃣ Create the loan
+    const loan = await tx.loans.create({
+      data: loanData,
+    });
 
-export { closeLoanDB,issueLoan,getFilteredLoans,getLoanDetails,getLoanHistory ,findLoanById,updatePendingAmount,createExistingLoan,getTotalPendingLoanAmount,createCapitalTracking};
+    // 2️⃣ Attach loanId to each repayment record
+    const updatedRepaymentRecords = repaymentRecords.map((record) => ({
+      ...record,
+      loanId: loan.id,
+    }));
+
+    // 3️⃣ Bulk insert repayment schedule
+    await tx.repayments.createMany({
+      data: updatedRepaymentRecords,
+    });
+
+    // 4️⃣ Update capital tracking
+    const latestCapital = await tx.capitalTracking.findFirst({
+      where: { userId: loanData.issuedById },
+      orderBy: { date: "desc" },
+    });
+
+    const previousIdleCapital = latestCapital ? latestCapital.idleCapital : 0;
+    const previousPendingAmount = latestCapital ? latestCapital.pendingLoanAmount : 0;
+
+    const newPendingLoanAmount = previousPendingAmount + loanData.pendingAmount;
+    const newTotalCapital = previousIdleCapital + newPendingLoanAmount;
+
+    await tx.capitalTracking.create({
+      data: {
+        userId: loanData.issuedById,
+        date: new Date(),
+        totalCapital: newTotalCapital,
+        idleCapital: previousIdleCapital,
+        pendingLoanAmount: newPendingLoanAmount,
+        amountCollectedToday: 0,
+      },
+    });
+
+    return loan;
+  });
+};
+
+const generateRepaymentScheduleForMigratedLoan = (
+  borrowerId: string,
+  collectedBy: string,
+  pendingAmount: number,
+  daysToRepay: string[],
+  dailyRepaymentAmount: number
+) => {
+  const schedule: any[] = [];
+  let remainingAmount = pendingAmount;
+
+  let currentDate = new Date();
+
+  // Loop until all pending amount is scheduled
+  while (remainingAmount > 0) {
+    const dayName = currentDate.toLocaleDateString("en-US", { weekday: "long" });
+
+    if (daysToRepay.includes(dayName)) {
+      const amountToPay = Math.min(dailyRepaymentAmount, remainingAmount);
+
+      schedule.push({
+        borrowerId,
+        collectedBy,
+        dueDate: new Date(currentDate),
+        amountPaid: 0,
+        amountToPay,
+        status: "Unpaid",
+        isPending: false,
+      });
+
+      remainingAmount -= amountToPay;
+    }
+
+    currentDate.setDate(currentDate.getDate() + 1); // Move to next day
+  }
+
+  return schedule;
+};
+
+export {generateRepaymentScheduleForMigratedLoan, createMigratedLoanWithSchedule,closeLoanDB,issueLoan,getFilteredLoans,getLoanDetails,getLoanHistory ,findLoanById,updatePendingAmount,createExistingLoan,getTotalPendingLoanAmount,createCapitalTracking};

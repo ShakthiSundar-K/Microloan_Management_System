@@ -13,7 +13,7 @@ router.get("/:loanId", protect, fetchLoanDetails);
 router.post("/register-existing-loan/:borrowerId", protect,registerExistingLoan );
 router.put("/update-pending-amount/:loanId", protect, updatePendingAmountController);
 router.post("/initialize-capital", protect, initializeCapital); 
-router.post("/close-loan/:loanId", protect, closeLoan);
+router.patch("/close-loan/:loanId", protect, closeLoan);
 
 
 
