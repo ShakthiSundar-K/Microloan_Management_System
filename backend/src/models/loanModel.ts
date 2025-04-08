@@ -8,13 +8,20 @@ const issueLoan = async (borrowerId: string, issuedById: string, data: any) => {
             orderBy: { date: "desc" },
         });
 
+        console.log(latestCapital, "latestCapital");
+
         if (!latestCapital) {
             throw new Error("No capital record found. Please initialize capital first.");
         }
-
+        const upfrontDeductedAmount = Number(data.upfrontDeductedAmount);
+        const principalAmount = Number(data.principalAmount);
+        const idleCapital = Number(latestCapital.idleCapital);
+        console.log(data.upfrontDeductedAmount, "upfrontDeductedAmount");
+        console.log(data.principalAmount, "principalAmount");
         // 2️⃣ Compute new idle capital
-        const newIdleCapital = latestCapital.idleCapital + data.upfrontDeductedAmount - data.principalAmount;
 
+        const newIdleCapital = idleCapital + upfrontDeductedAmount - principalAmount;   
+        console.log(newIdleCapital, "newIdleCapital");
         // 🚨 Prevent lending if idle capital goes negative
         if (newIdleCapital < 0) {
             throw new Error("Insufficient idle capital to issue loan");
@@ -334,6 +341,10 @@ const getLoanHistory = async (
     return await prisma.loans.findUnique({ where: { loanId } });
 };
 
+const deleteLoan = async (loanId: string) => {
+    await prisma.loans.delete({where: { loanId }});
+}
+
 const createExistingLoan = async (loanData: any) => {
     return await prisma.loans.create({
         data: loanData,
@@ -351,7 +362,7 @@ const createExistingLoan = async (loanData: any) => {
 // ✅ Fetch total pending loan amount for a user
  const getTotalPendingLoanAmount = async (userId: string) => {
     const pendingLoanAggregate = await prisma.loans.aggregate({
-        where: { issuedById: userId },
+        where: { issuedById: userId,status: { not: "Defaulted" } },
         _sum: { pendingAmount: true },
     });
 
@@ -369,7 +380,7 @@ const createExistingLoan = async (loanData: any) => {
             totalCapital,
             idleCapital,
             pendingLoanAmount,
-            amountCollectedToday: 0, // No collections yet
+            
         },
     });
 };
@@ -436,7 +447,7 @@ const createMigratedLoanWithSchedule = async (loanData: any, repaymentRecords: a
     // 2️⃣ Attach loanId to each repayment record
     const updatedRepaymentRecords = repaymentRecords.map((record) => ({
       ...record,
-      loanId: loan.id,
+      loanId: loan.loanId,
     }));
 
     // 3️⃣ Bulk insert repayment schedule
@@ -444,28 +455,6 @@ const createMigratedLoanWithSchedule = async (loanData: any, repaymentRecords: a
       data: updatedRepaymentRecords,
     });
 
-    // 4️⃣ Update capital tracking
-    const latestCapital = await tx.capitalTracking.findFirst({
-      where: { userId: loanData.issuedById },
-      orderBy: { date: "desc" },
-    });
-
-    const previousIdleCapital = latestCapital ? latestCapital.idleCapital : 0;
-    const previousPendingAmount = latestCapital ? latestCapital.pendingLoanAmount : 0;
-
-    const newPendingLoanAmount = previousPendingAmount + loanData.pendingAmount;
-    const newTotalCapital = previousIdleCapital + newPendingLoanAmount;
-
-    await tx.capitalTracking.create({
-      data: {
-        userId: loanData.issuedById,
-        date: new Date(),
-        totalCapital: newTotalCapital,
-        idleCapital: previousIdleCapital,
-        pendingLoanAmount: newPendingLoanAmount,
-        amountCollectedToday: 0,
-      },
-    });
 
     return loan;
   });
@@ -509,4 +498,4 @@ const generateRepaymentScheduleForMigratedLoan = (
   return schedule;
 };
 
-export {generateRepaymentScheduleForMigratedLoan, createMigratedLoanWithSchedule,closeLoanDB,issueLoan,getFilteredLoans,getLoanDetails,getLoanHistory ,findLoanById,updatePendingAmount,createExistingLoan,getTotalPendingLoanAmount,createCapitalTracking};
+export {deleteLoan,generateRepaymentScheduleForMigratedLoan, createMigratedLoanWithSchedule,closeLoanDB,issueLoan,getFilteredLoans,getLoanDetails,getLoanHistory ,findLoanById,updatePendingAmount,createExistingLoan,getTotalPendingLoanAmount,createCapitalTracking};

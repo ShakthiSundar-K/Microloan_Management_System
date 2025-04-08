@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { createMigratedLoanWithSchedule,generateRepaymentScheduleForMigratedLoan,closeLoanDB,issueLoan,getFilteredLoans,getLoanDetails,getLoanHistory ,findLoanById, updatePendingAmount,createExistingLoan,getTotalPendingLoanAmount, createCapitalTracking} from "../models/loanModel";
+import {deleteLoan, createMigratedLoanWithSchedule,generateRepaymentScheduleForMigratedLoan,closeLoanDB,issueLoan,getFilteredLoans,getLoanDetails,getLoanHistory ,findLoanById, updatePendingAmount,createExistingLoan,getTotalPendingLoanAmount, createCapitalTracking} from "../models/loanModel";
 
 const issueLoanController = async (req: Request, res: Response):Promise<Response|void> => {
     try {
@@ -68,6 +68,7 @@ const registerExistingLoan = async (req: Request, res: Response) => {
     principalAmount,
     pendingAmount,
     dailyRepaymentAmount,
+    upfrontDeductedAmount,
     issuedAt,
     daysToRepay, // e.g., ["Monday", "Tuesday", "Wednesday"]
   } = req.body;
@@ -84,6 +85,7 @@ const registerExistingLoan = async (req: Request, res: Response) => {
       borrowerId,
       issuedById,
       principalAmount,
+      upfrontDeductedAmount,
       pendingAmount,
       dailyRepaymentAmount,
       dueDate: null,
@@ -179,6 +181,25 @@ const closeLoan = async (req: Request, res: Response) => {
     }
 };
 
-export { issueLoanController,filterLoans,fetchLoanDetails,fetchLoanHistory,updatePendingAmountController,registerExistingLoan,initializeCapital,closeLoan};
+const deleteLoanById = async (req: Request, res: Response) => {
+  const { loanId } = req.params;
+
+  try {
+    const loan = await findLoanById(loanId);
+
+    if (!loan) {
+      return res.status(404).json({ error: "Loan not found" });
+    }
+
+    await deleteLoan(loanId);
+
+    return res.status(200).json({ message: "Loan and its repayments deleted successfully." });
+  } catch (error) {
+    console.error("Failed to delete loan:", error);
+    return res.status(500).json({ error: "Failed to delete loan" });
+  }
+};
+
+export { issueLoanController,filterLoans,fetchLoanDetails,fetchLoanHistory,updatePendingAmountController,registerExistingLoan,initializeCapital,closeLoan,deleteLoanById};
 
 

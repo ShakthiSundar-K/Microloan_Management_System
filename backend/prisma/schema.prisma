@@ -98,7 +98,7 @@ model Repayments {
 
   // Relationships
   collectedByUser Users     @relation(fields: [collectedBy], references: [userId])
-  loan            Loans     @relation(fields: [loanId], references: [loanId])
+  loan            Loans     @relation(fields: [loanId], references: [loanId], onDelete: Cascade)
   borrower        Borrowers @relation(fields: [borrowerId], references: [borrowerId])
 }
 
@@ -178,7 +178,7 @@ model CapitalTracking {
   totalCapital         Decimal  @db.Decimal(12, 2) // Total capital (pending loans + idle capital)
   idleCapital          Decimal  @db.Decimal(12, 2) // Capital available for lending
   pendingLoanAmount    Decimal  @db.Decimal(12, 2) // Total pending loan amount
-  amountCollectedToday Decimal  @db.Decimal(12, 2) // Amount collected from repayments today
+  amountCollectedToday Decimal? @db.Decimal(12, 2) // Amount collected from repayments today
 
   user Users @relation(fields: [userId], references: [userId]) // Links to lender
 }
