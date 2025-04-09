@@ -4,7 +4,7 @@ import { generateMonthlyFinancialSummaryCron } from "../controllers/financialSum
 
 import prisma from "../config/prismaClient";
 
-const scheduleMonthlyFinancialSummary = () => {
+
   cron.schedule(
     "59 23 28-31 * *", // Trigger near the end of each month
     async () => {
@@ -32,6 +32,5 @@ const scheduleMonthlyFinancialSummary = () => {
       timezone: "Asia/Kolkata",
     }
   );
-};
 
-export default scheduleMonthlyFinancialSummary;
+

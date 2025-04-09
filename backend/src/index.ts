@@ -5,6 +5,7 @@ import helmet from "helmet";
 import morgan from "morgan";
 import appRoutes from "./routes/index";
 import "./cron/riskAssessmentCron";
+import "./cron/financialSummaryCron";
 
 dotenv.config();
 
