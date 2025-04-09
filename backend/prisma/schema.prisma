@@ -151,24 +151,31 @@ model RiskThreshold {
 
 /// FinancialSummary table stores monthly financial reports.
 model FinancialSummary {
-  id                                    String   @id @default(uuid()) // Unique identifier for each report
-  userId                                String // References the lender generating the report
-  month                                 DateTime // Month for which the report is generated
-  totalLoansIssued                      Int // Number of loans issued in the month
-  totalPrincipalLent                    Decimal  @db.Decimal(10, 2) // Total principal amount lent
-  totalUpfrontDeductions                Decimal  @db.Decimal(10, 2) // Total upfront deductions made
-  totalRepaymentsCollected              Int // Total repayments collected
-  totalMissedRepayments                 Int // Total missed repayments
-  totalAmountCollectedThroughRepayments Decimal  @db.Decimal(10, 2) // Total repayment amount collected
-  activeLoansCount                      Int // Count of currently active loans
-  closedLoansCount                      Int // Count of closed loans
-  defaultedLoansCount                   Int // Count of defaulted loans
-  updatedAt                             DateTime @updatedAt // Timestamp for last update
+  id     String @id @default(uuid())
+  userId String
+  month  String // Format: "YYYY-MM" (e.g., "2025-06")
 
-  // Relationship
-  user Users @relation(fields: [userId], references: [userId]) // Links to lender
+  totalLoansIssued       Int
+  totalPrincipalLent     Decimal @db.Decimal(10, 2)
+  totalUpfrontDeductions Decimal @db.Decimal(10, 2)
 
-  @@index([month]) // Index for filtering by month
+  newBorrowersThisMonth Int
+
+  activeLoansCount    Int
+  closedLoansCount    Int
+  defaultedLoansCount Int
+
+  pendingLoanAmount Decimal @db.Decimal(10, 2)
+  totalCapital      Decimal @db.Decimal(10, 2)
+  idleCapital       Decimal @db.Decimal(10, 2)
+
+  updatedAt DateTime @updatedAt
+
+  // Relation
+  user Users @relation(fields: [userId], references: [userId])
+
+  @@unique([userId, month])
+  @@index([userId, month])
 }
 
 model RepaymentHistory {
