@@ -1,5 +1,5 @@
  import { Request, Response } from "express";
- import {calculateAndSaveRiskAssessment,upsertRiskThreshold} from "../models/riskAssessmentModel";
+ import {calculateAndSaveRiskAssessment,upsertRiskThreshold,getAllBorrowerId} from "../models/riskAssessmentModel";
  const manualRiskAssessmentTrigger = async (req: Request, res: Response) => {
   const { borrowerId } = req.params;
 
@@ -34,4 +34,21 @@ const updateRiskThreshold = async (req: Request, res: Response) => {
   }
 };
 
-export  {manualRiskAssessmentTrigger,updateRiskThreshold}
+
+const runDailyRiskAssessment = async () => {
+  try {
+    const borrowers = await getAllBorrowerId();
+    console.log("Borrowers",borrowers);
+
+    const borrowerIds = borrowers.map(b => b.borrowerId);
+
+    await calculateAndSaveRiskAssessment(borrowerIds);
+
+    console.log("Daily risk assessment completed for all borrowers.");
+  } catch (error) {
+    console.error("Risk assessment error:", error);
+  
+  }
+};
+
+export  {manualRiskAssessmentTrigger,updateRiskThreshold,runDailyRiskAssessment}

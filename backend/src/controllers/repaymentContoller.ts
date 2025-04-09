@@ -34,15 +34,19 @@ const closePaymentsForTheDay = async (req: Request, res: Response): Promise<void
     }
 };
 
-const fetchTodayRepayments = async (req: Request, res: Response) :Promise<void>=> {
+const fetchTodayRepayments = async (req: Request, res: Response): Promise<void> => {
     try {
         const repayments = await getTodayRepayments();
 
         if (!repayments.length) {
-            res.status(200).json({ message: "No repayments scheduled for today." });
+             res.status(200).json({ message: "No repayments scheduled for today." }); // ✅ Added return
+             return;
         }
 
-         res.status(200).json({message: "Repayments fetched successfully", data: repayments });
+        res.status(200).json({
+            message: "Repayments fetched successfully",
+            data: repayments
+        });
     } catch (error) {
         res.status(500).json({
             message: "Failed to fetch today's repayments schedule",
@@ -50,6 +54,7 @@ const fetchTodayRepayments = async (req: Request, res: Response) :Promise<void>=
         });
     }
 };
+
 
 
 const fetchTodayCollectionStatus = async (req: Request, res: Response) => {

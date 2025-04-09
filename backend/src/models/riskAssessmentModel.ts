@@ -161,4 +161,10 @@ const upsertRiskThreshold = async (
   }
 };
 
-export {calculateAndSaveRiskAssessment,upsertRiskThreshold,getRiskThresholdByUserId};
+const getAllBorrowerId = async () => {
+    return prisma.borrowers.findMany({
+      select: { borrowerId: true }
+    });
+}
+
+export {calculateAndSaveRiskAssessment,upsertRiskThreshold,getRiskThresholdByUserId,getAllBorrowerId};
