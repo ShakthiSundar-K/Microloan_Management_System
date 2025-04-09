@@ -20,6 +20,20 @@ import { getMonthlyFinancialData } from "../models/financialSummaryModel";
     });
   }
 };
+
+ const generateMonthlyFinancialSummaryCron = async (id:string) => {
+  try {
+    const userId = id;
+    if (!userId) return console.log("Unauthorized");
+
+    await getMonthlyFinancialData(userId);
+
+    console.log("Monthly financial summary generated/updated successfully for userId:", userId);
+  } catch (error) {
+    console.error("Financial summary generation error:", error);
+  
+  }
+};
     
     
-export { generateMonthlyFinancialSummary };
+export { generateMonthlyFinancialSummary ,generateMonthlyFinancialSummaryCron};
