@@ -25,6 +25,7 @@ model Users {
   financialReports    FinancialSummary[] // Monthly financial reports related to this user
   capitalTracking     CapitalTracking[] // Tracks capital status for this user
   paymentDayLogs      PaymentDayLog[]
+  RiskThreshold       RiskThreshold?
 
   @@index([name]) // Index on name to speed up searches
 }
@@ -115,21 +116,22 @@ enum RepaymentStatus {
 
 /// RiskAssessment table calculates and stores risk scores for borrowers.
 model RiskAssessment {
-  assessmentId              String    @id @default(uuid()) // Unique identifier for each assessment
-  borrowerId                String    @unique // References borrower being assessed
-  totalLoans                Int // Total number of loans taken by the borrower
-  missedPayments            Int // Total missed repayments
-  totalDueRepayments        Int // Total due repayments
-  totalPaidRepayments       Int // Total repayments made
-  onTimePayments            Int // Repayments made on time
-  repaymentConsistencyScore Decimal   @db.Decimal(5, 2) // Score measuring repayment consistency
-  riskLevel                 RiskLevel @default(Low_Risk) // Risk level based on consistency
-  updatedAt                 DateTime  @updatedAt // Timestamp when assessment was last updated
+  id                 String    @id @default(uuid())
+  borrowerId         String    @unique
+  totalLoansTaken    Int
+  totalRepayments    Int
+  missedRepayments   Int
+  latePayments       Int
+  defaultedLoans     Int
+  completedLoans     Int
+  onTimePayments     Int
+  repaymentRate      Float
+  averageDelayInDays Float
+  riskScore          Int
+  riskLevel          RiskLevel
+  lastEvaluatedAt    DateTime  @default(now())
 
-  // Relationship
-  borrower Borrowers @relation(fields: [borrowerId], references: [borrowerId]) // Links to the borrower
-
-  @@index([riskLevel]) // Index on risk level to speed up filtering
+  borrower Borrowers @relation(fields: [borrowerId], references: [borrowerId])
 }
 
 /// Enum defining different risk levels for borrowers.
@@ -137,6 +139,14 @@ enum RiskLevel {
   Low_Risk // Borrower has a good repayment record
   Moderate_Risk // Borrower has occasional missed payments
   High_Risk // Borrower frequently misses payments
+}
+
+model RiskThreshold {
+  id              String @id @default(uuid())
+  userId          String @unique
+  lowThreshold    Int    @default(70)
+  mediumThreshold Int    @default(40)
+  user            Users  @relation(fields: [userId], references: [userId])
 }
 
 /// FinancialSummary table stores monthly financial reports.
