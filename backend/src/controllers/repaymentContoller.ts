@@ -1,7 +1,16 @@
 import { Request, Response } from "express";
 import { recordPayment,finishPaymentsForTheDay ,getTodayRepayments,getTodayCollectionStatus} from "../models/repaymentModel";
 
+const isLender = (req: Request, res: Response): boolean => {
+    if (req.user?.role !== "LENDER") {
+        res.status(403).json({ message: "You do not have access to perform this operation" });
+        return false;
+    }
+    return true;
+};
+
 const recordPaymentController = async (req: Request, res: Response): Promise< void> => {
+    if (!isLender(req, res)) return;
     try {
         const { borrowerId, loanId } = req.params;
         const { id } = req.user;
@@ -20,6 +29,7 @@ const recordPaymentController = async (req: Request, res: Response): Promise< vo
     }
 };
 const closePaymentsForTheDay = async (req: Request, res: Response): Promise<void> => {
+    if (!isLender(req, res)) return;
     try {
         const { id: collectorId } = req.user; // Get collector's ID from request
 
@@ -35,6 +45,7 @@ const closePaymentsForTheDay = async (req: Request, res: Response): Promise<void
 };
 
 const fetchTodayRepayments = async (req: Request, res: Response): Promise<void> => {
+    if (!isLender(req, res)) return;
     try {
         const repayments = await getTodayRepayments();
 
@@ -58,6 +69,7 @@ const fetchTodayRepayments = async (req: Request, res: Response): Promise<void> 
 
 
 const fetchTodayCollectionStatus = async (req: Request, res: Response) => {
+    if (!isLender(req, res)) return;
     try {
         // Fetch the collection status for today
         const status = await getTodayCollectionStatus();

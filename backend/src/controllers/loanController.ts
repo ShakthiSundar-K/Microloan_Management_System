@@ -1,7 +1,16 @@
 import { Request, Response } from "express";
 import {deleteLoan, createMigratedLoanWithSchedule,generateRepaymentScheduleForMigratedLoan,closeLoanDB,issueLoan,getFilteredLoans,getLoanDetails,getLoanHistory ,findLoanById, updatePendingAmount,createExistingLoan,getTotalPendingLoanAmount, createCapitalTracking} from "../models/loanModel";
 
+const isLender = (req: Request, res: Response): boolean => {
+    if (req.user?.role !== "LENDER") {
+        res.status(403).json({ message: "You do not have access to perform this operation" });
+        return false;
+    }
+    return true;
+};
+
 const issueLoanController = async (req: Request, res: Response):Promise<Response|void> => {
+    if (!isLender(req, res)) return;
     try {
         // Check if the user has the "LENDER" role
         if (req.user.role !== "LENDER") {
@@ -19,6 +28,7 @@ const issueLoanController = async (req: Request, res: Response):Promise<Response
 };
 
  const filterLoans = async (req: Request, res: Response) => {
+    if (!isLender(req, res)) return;
     try {
         const filters = req.query; 
         const loans = await getFilteredLoans(filters);
@@ -29,6 +39,7 @@ const issueLoanController = async (req: Request, res: Response):Promise<Response
 };
 
  const fetchLoanDetails = async (req: Request, res: Response) => {
+    if (!isLender(req, res)) return;
     try {
         const { loanId } = req.params;
         if (!loanId) {
@@ -44,6 +55,7 @@ const issueLoanController = async (req: Request, res: Response):Promise<Response
 
 
 const fetchLoanHistory = async (req: Request, res: Response) => {
+    if (!isLender(req, res)) return;
     try {
         const { filterType, startDate, endDate, minAmount, maxAmount } = req.query;
         // Fetch the loan history
@@ -64,6 +76,7 @@ const fetchLoanHistory = async (req: Request, res: Response) => {
 };
 
 const registerExistingLoan = async (req: Request, res: Response) => {
+if (!isLender(req, res)) return;
   const {
     principalAmount,
     pendingAmount,
@@ -117,6 +130,7 @@ const registerExistingLoan = async (req: Request, res: Response) => {
 };
 
 const updatePendingAmountController = async (req: Request, res: Response) => {
+    if (!isLender(req, res)) return;
     try {
         const { loanId } = req.params;
         const { newPendingAmount } = req.body;
@@ -147,6 +161,7 @@ const updatePendingAmountController = async (req: Request, res: Response) => {
 };
 
 const initializeCapital = async (req: Request, res: Response) => {
+    if (!isLender(req, res)) return;
     const { idleCapital } = req.body;
     const userId = req.user.id;
 
@@ -169,6 +184,7 @@ const initializeCapital = async (req: Request, res: Response) => {
 };
 
 const closeLoan = async (req: Request, res: Response) => {
+    if (!isLender(req, res)) return;
     const { loanId } = req.params;
     const userId = req.user.id;
 
@@ -182,6 +198,7 @@ const closeLoan = async (req: Request, res: Response) => {
 };
 
 const deleteLoanById = async (req: Request, res: Response) => {
+    if (!isLender(req, res)) return;
   const { loanId } = req.params;
 
   try {

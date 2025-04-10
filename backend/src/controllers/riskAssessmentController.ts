@@ -1,6 +1,17 @@
  import { Request, Response } from "express";
  import {calculateAndSaveRiskAssessment,upsertRiskThreshold,getAllBorrowerId,getRiskAssessmentByUserId} from "../models/riskAssessmentModel";
+
+ const isLender = (req: Request, res: Response): boolean => {
+    if (req.user?.role !== "LENDER") {
+        res.status(403).json({ message: "You do not have access to perform this operation" });
+        return false;
+    }
+    return true;
+};
+
  const manualRiskAssessmentTrigger = async (req: Request, res: Response) => {
+
+  if (!isLender(req, res)) return;
   const { borrowerId } = req.params;
 
   if (!borrowerId) {
@@ -18,6 +29,7 @@
 };
 
 const updateRiskThreshold = async (req: Request, res: Response) => {
+  if (!isLender(req, res)) return;
   try {
     const userId = req.user.id;
     const { lowThreshold, mediumThreshold } = req.body;
@@ -52,6 +64,7 @@ const runDailyRiskAssessment = async () => {
 };
 
  const getRiskAssessmentById = async (req: Request, res: Response) => {
+  if (!isLender(req, res)) return;
   try {
     const borrowerId = req.params.borrowerId
 

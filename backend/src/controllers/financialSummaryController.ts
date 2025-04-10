@@ -2,8 +2,17 @@ import { Request, Response } from "express";
 import { getMonthlyFinancialData,findMonthlyFinancialSummary,getDynamicFinancialSummary,getLatestCapital } from "../models/financialSummaryModel";
 import dayjs from "dayjs";
 
+const isLender = (req: Request, res: Response): boolean => {
+    if (req.user?.role !== "LENDER") {
+        res.status(403).json({ message: "You do not have access to perform this operation" });
+        return false;
+    }
+    return true;
+};
 
  const generateMonthlyFinancialSummary = async (req: Request, res: Response) => {
+  if (!isLender(req, res)) return;
+
   try {
     const userId = req.user.id;
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
@@ -23,6 +32,7 @@ import dayjs from "dayjs";
 };
 
  const generateMonthlyFinancialSummaryCron = async (id:string) => {
+      
   try {
     const userId = id;
     if (!userId) return console.log("Unauthorized");
@@ -37,6 +47,8 @@ import dayjs from "dayjs";
 };
     
 const getMonthlyFinancialSummary = async (req: Request, res: Response) => {
+  if (!isLender(req, res)) return;
+
   try {
     const userId = req.user.id; // assuming JWT auth middleware adds this
     const month = dayjs().format("YYYY-MM");
@@ -67,6 +79,8 @@ const getDynamicFinancialSummaryController = async (
   req: Request,
   res: Response
 ) => {
+  if (!isLender(req, res)) return;
+
   try {
     const userId = req.user.id;
 
@@ -91,6 +105,8 @@ const getDynamicFinancialSummaryController = async (
     
 
 const getLatestCapitalById = async (req:Request,res:Response) => {
+if (!isLender(req, res)) return;
+
 try {
     const userId = req.user.id; // or however you're extracting userId from auth
     const data = await getLatestCapital(userId);
