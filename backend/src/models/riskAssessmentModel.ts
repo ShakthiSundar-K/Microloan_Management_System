@@ -167,4 +167,12 @@ const getAllBorrowerId = async () => {
     });
 }
 
-export {calculateAndSaveRiskAssessment,upsertRiskThreshold,getRiskThresholdByUserId,getAllBorrowerId};
+ const getRiskAssessmentByUserId = async (borrowerId: string) => {
+  return await prisma.riskAssessment.findUnique({
+    where: {
+      borrowerId,
+    },
+  });
+};
+
+export {calculateAndSaveRiskAssessment,upsertRiskThreshold,getRiskThresholdByUserId,getAllBorrowerId,getRiskAssessmentByUserId};

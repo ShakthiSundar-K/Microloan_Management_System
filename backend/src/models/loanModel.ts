@@ -8,7 +8,6 @@ const issueLoan = async (borrowerId: string, issuedById: string, data: any) => {
             orderBy: { date: "desc" },
         });
 
-        console.log(latestCapital, "latestCapital");
 
         if (!latestCapital) {
             throw new Error("No capital record found. Please initialize capital first.");
@@ -16,8 +15,7 @@ const issueLoan = async (borrowerId: string, issuedById: string, data: any) => {
         const upfrontDeductedAmount = Number(data.upfrontDeductedAmount);
         const principalAmount = Number(data.principalAmount);
         const idleCapital = Number(latestCapital.idleCapital);
-        console.log(data.upfrontDeductedAmount, "upfrontDeductedAmount");
-        console.log(data.principalAmount, "principalAmount");
+
         // 2️⃣ Compute new idle capital
 
         const newIdleCapital = idleCapital + upfrontDeductedAmount - principalAmount;   

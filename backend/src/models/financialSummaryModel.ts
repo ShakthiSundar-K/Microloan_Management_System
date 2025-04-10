@@ -114,3 +114,107 @@ export const findMonthlyFinancialSummary = async (userId: string, month: string)
     },
   });
 };
+
+export const getDynamicFinancialSummary = async (
+  userId: string,
+  from?: string,
+  to?: string
+) => {
+  const start = from ? new Date(from) : dayjs().subtract(10, "day").startOf("day").toDate();
+  const end = to ? new Date(to) : dayjs().endOf("day").toDate();
+
+  // 1️⃣ Loans Issued
+  const loanStats = await prisma.loans.aggregate({
+    where: {
+      issuedById: userId,
+      issuedAt: { gte: start, lte: end },
+    },
+    _sum: {
+      principalAmount: true,
+      upfrontDeductedAmount: true,
+    },
+    _count: {
+      loanId: true,
+    },
+  });
+
+  // 2️⃣ Borrowers registered in time range
+  const newBorrowers = await prisma.borrowers.findMany({
+  where: {
+    createdAt: {
+      gte: start,
+      lt: end,
+    },
+  },
+  include: {
+    loansTaken: {
+      where: {
+        issuedAt: {
+          gte: start,
+          lt: end,
+        },
+      },
+    },
+  },
+});
+
+const newBorrowersThisMonth = newBorrowers.filter(b => b.loansTaken.length > 0).length;
+
+
+  // 3️⃣ Loan Status counts
+  const loanStatusCounts = await prisma.loans.groupBy({
+    by: ["status"],
+    where: {
+      issuedById: userId,
+      issuedAt: { gte: start, lte: end },
+    },
+    _count: { loanId: true },
+  });
+
+  const loanStatusMap = {
+    Active: 0,
+    Closed: 0,
+    Defaulted: 0,
+  };
+
+  loanStatusCounts.forEach(({ status, _count }) => {
+    loanStatusMap[status] = _count.loanId;
+  });
+
+  // 4️⃣ Latest Capital Snapshot (as of now)
+  const lastCapital = await prisma.capitalTracking.findFirst({
+    where: { userId },
+    orderBy: { date: "desc" },
+  });
+
+  if (!lastCapital) {
+    throw new Error("Capital tracking record not found for user");
+  }
+
+  return {
+    userId,
+    month: dayjs(start).format("YYYY-MM"),
+    totalLoansIssued: loanStats._count.loanId,
+    totalPrincipalLent: loanStats._sum.principalAmount || 0,
+    totalUpfrontDeductions: loanStats._sum.upfrontDeductedAmount || 0,
+    newBorrowers:newBorrowersThisMonth,
+
+    activeLoansCount: loanStatusMap.Active || 0,
+    closedLoansCount: loanStatusMap.Closed || 0,
+    defaultedLoansCount: loanStatusMap.Defaulted || 0,
+
+    pendingLoanAmount: lastCapital.pendingLoanAmount,
+    idleCapital: lastCapital.idleCapital,
+    totalCapital: lastCapital.totalCapital,
+
+    updatedAt: new Date(), // Dynamic result
+  };
+};
+
+
+export const getLatestCapital = async (userId: string) => {
+  return await prisma.capitalTracking.findFirst({
+    where: { userId },
+    orderBy: { date: "desc" },
+  });
+};

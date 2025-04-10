@@ -205,9 +205,28 @@ const updateCapital = async (
     data: {
       idleCapital: newIdleCapital,
       pendingLoanAmount: newPendingLoanAmount,
-      totalCapital: newIdleCapital.add(newPendingLoanAmount),
     },
   });
+
+   const updated = await tx.capitalTracking.findUnique({
+    where: { id: lastCapital.id },
+    select: {
+      idleCapital: true,
+      pendingLoanAmount: true,
+      totalCapital: true,
+    },
+  });
+
+  if (!updated) {
+    throw new Error("Updated capital tracking record not found.");
+  }
+  const expectedTotal = updated.idleCapital.add(updated.pendingLoanAmount);
+
+  if (!expectedTotal.equals(updated.totalCapital)) {
+    throw new Error(
+      `💥 Capital mismatch! idle + pending = ${expectedTotal.toString()}, but totalCapital = ${updated.totalCapital.toString()}`
+    );
+  }
 };
 
 

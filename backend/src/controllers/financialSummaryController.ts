@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { getMonthlyFinancialData,findMonthlyFinancialSummary } from "../models/financialSummaryModel";
+import { getMonthlyFinancialData,findMonthlyFinancialSummary,getDynamicFinancialSummary,getLatestCapital } from "../models/financialSummaryModel";
 import dayjs from "dayjs";
 
 
@@ -62,5 +62,42 @@ const getMonthlyFinancialSummary = async (req: Request, res: Response) => {
   }
 };
 
+
+const getDynamicFinancialSummaryController = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const userId = req.user.id;
+
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const { from, to } = req.query;
+
+    const summary = await getDynamicFinancialSummary(
+      userId,
+      from as string | undefined,
+      to as string | undefined
+    );
+
+    return res.status(200).json(summary);
+  } catch (error) {
+    console.error("Error fetching dynamic financial summary:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
     
-export { generateMonthlyFinancialSummary ,generateMonthlyFinancialSummaryCron,getMonthlyFinancialSummary};
+
+const getLatestCapitalById = async (req:Request,res:Response) => {
+try {
+    const userId = req.user.id; // or however you're extracting userId from auth
+    const data = await getLatestCapital(userId);
+    res.json({message:"Latest Capital fetched successfully",data});
+  } catch (error) {
+    res.status(500).json({ message: (error as Error).message });
+  }
+};
+
+export { getLatestCapitalById,generateMonthlyFinancialSummary ,generateMonthlyFinancialSummaryCron,getMonthlyFinancialSummary,getDynamicFinancialSummaryController};

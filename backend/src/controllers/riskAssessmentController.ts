@@ -1,5 +1,5 @@
  import { Request, Response } from "express";
- import {calculateAndSaveRiskAssessment,upsertRiskThreshold,getAllBorrowerId} from "../models/riskAssessmentModel";
+ import {calculateAndSaveRiskAssessment,upsertRiskThreshold,getAllBorrowerId,getRiskAssessmentByUserId} from "../models/riskAssessmentModel";
  const manualRiskAssessmentTrigger = async (req: Request, res: Response) => {
   const { borrowerId } = req.params;
 
@@ -51,4 +51,25 @@ const runDailyRiskAssessment = async () => {
   }
 };
 
-export  {manualRiskAssessmentTrigger,updateRiskThreshold,runDailyRiskAssessment}
+ const getRiskAssessmentById = async (req: Request, res: Response) => {
+  try {
+    const borrowerId = req.params.borrowerId
+
+    if (!borrowerId) {
+      return res.status(400).json({ error: "Borrower ID is required." });
+    }
+
+    const riskAssessment = await getRiskAssessmentByUserId(borrowerId);
+
+    if (!riskAssessment) {
+      return res.status(404).json({ error: "No risk assessment found for this user." });
+    }
+
+    res.status(200).json({message:"Risk Assessment found successfully", data: riskAssessment });
+  } catch (error) {
+    console.error("Error fetching risk assessment:", error);
+    res.status(500).json({ error: "Internal server error." });
+  }
+};
+
+export  {manualRiskAssessmentTrigger,updateRiskThreshold,runDailyRiskAssessment,getRiskAssessmentById}
