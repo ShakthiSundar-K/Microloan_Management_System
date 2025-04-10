@@ -72,7 +72,7 @@ const newBorrowersThisMonth = newBorrowers.filter(b => b.loansTaken.length > 0).
   const idleCapital = capitalSnapshot?.idleCapital ?? 0;
 
   // 🔹 Upsert into FinancialSummary
-  const result = await prisma.financialSummary.upsert({
+   await prisma.financialSummary.upsert({
     where: { userId_month: { userId, month } },
     update: {
       totalLoansIssued,
@@ -101,5 +101,16 @@ const newBorrowersThisMonth = newBorrowers.filter(b => b.loansTaken.length > 0).
       idleCapital,
     },
   });
-  return result;
+  
+};
+
+export const findMonthlyFinancialSummary = async (userId: string, month: string) => {
+  return await prisma.financialSummary.findUnique({
+    where: {
+      userId_month: {
+        userId: userId,
+        month: month,
+      },
+    },
+  });
 };

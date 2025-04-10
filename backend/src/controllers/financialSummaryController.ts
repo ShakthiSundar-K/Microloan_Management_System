@@ -1,16 +1,17 @@
 import { Request, Response } from "express";
-import { getMonthlyFinancialData } from "../models/financialSummaryModel";
+import { getMonthlyFinancialData,findMonthlyFinancialSummary } from "../models/financialSummaryModel";
+import dayjs from "dayjs";
+
 
  const generateMonthlyFinancialSummary = async (req: Request, res: Response) => {
   try {
     const userId = req.user.id;
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
-    const result = await getMonthlyFinancialData(userId);
+    await getMonthlyFinancialData(userId);
 
     res.status(200).json({
-      message: "Monthly financial summary generated/updated successfully",
-      data: result,
+      message: "Monthly financial summary generated/updated successfully"
     });
   } catch (error) {
     console.error("Financial summary generation error:", error);
@@ -35,5 +36,31 @@ import { getMonthlyFinancialData } from "../models/financialSummaryModel";
   }
 };
     
+const getMonthlyFinancialSummary = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user.id; // assuming JWT auth middleware adds this
+    const month = dayjs().format("YYYY-MM");
+
+    const summary = await findMonthlyFinancialSummary(userId, month);
+
+    if (!summary) {
+      return res.status(404).json({
+        message:
+          "No monthly financial summary found. Please generate it manually or wait for auto-generation at month end.",
+      });
+    }
+
+    return res.status(200).json({
+      message: "Monthly financial summary retrieved successfully",
+      data: summary,
+    });
+  } catch (error) {
+    console.error("Error retrieving monthly summary:", error);
+    return res.status(500).json({
+      message: "An error occurred while retrieving the monthly summary.",
+    });
+  }
+};
+
     
-export { generateMonthlyFinancialSummary ,generateMonthlyFinancialSummaryCron};
+export { generateMonthlyFinancialSummary ,generateMonthlyFinancialSummaryCron,getMonthlyFinancialSummary};

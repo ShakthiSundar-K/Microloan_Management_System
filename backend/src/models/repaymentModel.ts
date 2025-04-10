@@ -173,13 +173,47 @@ const recordPayment = async (
             },
         });
 
+        await updateCapital(tx, collectedById, amountPaid);
+
         await Promise.all(updates);
     });
 };
 
 
+const updateCapital = async (
+  tx: Prisma.TransactionClient,
+  userId: string,
+  amountPaid: number
+) => {
+  // 1️⃣ Fetch latest capital entry
+  const lastCapital = await tx.capitalTracking.findFirst({
+    where: { userId },
+    orderBy: { date: "desc" },
+  });
 
-const updateIdleCapital = async (tx: Prisma.TransactionClient, today: Date, id: string) => {
+  if (!lastCapital) throw new Error("CapitalTracking record not found");
+
+  // 2️⃣ Add collected amount to idleCapital
+  const newIdleCapital = lastCapital.idleCapital.add(amountPaid);
+
+  // 3️⃣ Subtract collected amount from pendingLoanAmount
+  const newPendingLoanAmount = lastCapital.pendingLoanAmount.sub(amountPaid);
+
+  // 4️⃣ Update the capital tracking record
+  await tx.capitalTracking.update({
+    where: { id: lastCapital.id },
+    data: {
+      idleCapital: newIdleCapital,
+      pendingLoanAmount: newPendingLoanAmount,
+      totalCapital: newIdleCapital.add(newPendingLoanAmount),
+    },
+  });
+};
+
+
+
+
+const updateAmtCollectedToday = async (tx: Prisma.TransactionClient, today: Date, id: string) => {
     // Get today's collected amount
     const startOfDay = new Date(today);
     startOfDay.setHours(0, 0, 0, 0);
@@ -206,28 +240,9 @@ const updateIdleCapital = async (tx: Prisma.TransactionClient, today: Date, id: 
         throw new Error("CapitalTracking record not found.");
     }
 
-    // Update idle capital
-    const newIdleCapital = lastCapital.idleCapital.add(dailyCollectedAmount);
-    
-    const pendingLoanAggregate = await tx.loans.aggregate({
-    where: {
-        issuedById: id,
-        status: { not: "Defaulted" },
-    },
-    _sum: {
-        pendingAmount: true,
-    },
-    });
-
-    const newPendingLoanAmount = pendingLoanAggregate._sum.pendingAmount || 0;
-
-
     await tx.capitalTracking.update({
     where: { id: lastCapital.id },
     data: {
-        idleCapital: newIdleCapital,
-        pendingLoanAmount: newPendingLoanAmount,
-        totalCapital: newIdleCapital.add(newPendingLoanAmount),
         amountCollectedToday:dailyCollectedAmount
   },
 });
@@ -260,7 +275,7 @@ const finishPaymentsForTheDay = async (collectorId: string) => {
     }
 
     // 2️⃣ Update Idle Capital
-    await updateIdleCapital(tx, today, collectorId);
+    await updateAmtCollectedToday(tx, today, collectorId);
 
     // 3️⃣ Mark overdue repayments as "Missed"
     const overdueRepayments = await tx.repayments.findMany({
