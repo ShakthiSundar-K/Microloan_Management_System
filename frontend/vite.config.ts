@@ -10,8 +10,6 @@ export default defineConfig({
         enabled: true,
       },
       strategies: "generateSW",
-      srcDir: "src",
-      filename: "sw.ts",
       registerType: "autoUpdate",
       
       manifest: {

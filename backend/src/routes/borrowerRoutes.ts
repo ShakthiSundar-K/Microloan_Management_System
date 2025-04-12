@@ -18,7 +18,7 @@ router.delete("/delete/:borrowerId",protect, deleteBorrowerController);
 
 router.get("/search", protect,getBorrowers);
 
-router.get("/borrower-details",protect, getBorrowerInfo);
+router.get("/borrower-details/:borrowerId",protect, getBorrowerInfo);
 
 
 export default router;

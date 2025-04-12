@@ -115,7 +115,7 @@ const deleteBorrowerController = async (req: Request, res: Response) => {
 const getBorrowerInfo = async (req: Request, res: Response) => {
     if (!isLender(req, res)) return;
     try {
-        const { borrowerId } = req.query;
+        const { borrowerId } = req.params;
 
         if (!borrowerId || typeof borrowerId !== "string") {
             res.status(400).json({ message: "Invalid borrowerId" });
