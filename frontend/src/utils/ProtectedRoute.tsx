@@ -4,7 +4,7 @@ import { ReactNode } from "react";
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const token = localStorage.getItem("token");
 
-  return token ? children : <Navigate to='/' />;
+  return token ? children : <Navigate to='/sign-up' />;
 }
 
 export default ProtectedRoute;

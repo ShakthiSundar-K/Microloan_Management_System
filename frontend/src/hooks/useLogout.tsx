@@ -5,7 +5,7 @@ function useLogout() {
   return () => {
     localStorage.removeItem("token");
     toast.success("Logout Successfull");
-    navigate("/");
+    navigate("/login");
   };
 }
 
