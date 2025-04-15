@@ -21,7 +21,7 @@ const generateBorrowerToken = (borrower : { borrowerId : string, role: string})=
 const register = async (req:Request, res:Response):Promise<void> => {
     try{
 
-        //  console.log("Incoming Request Body:", req.body);
+         console.log("Incoming Request Body:", req.body);
         //extracting the name, email, phoneNumber and password from the request body
         const {name,email,phoneNumber,password,role} = req.body;
 

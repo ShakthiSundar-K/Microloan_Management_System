@@ -1,7 +1,7 @@
 // App.tsx
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import SignUp from "./pages/SignUp";
-// import SignIn from "./pages/SignIn";
+import SignIn from "./pages/SignIn";
 import Layout from "./components/Layout";
 import Home from "./pages/Home";
 import MobileContainer from "./components/MobileContainer";
@@ -14,7 +14,7 @@ const App = () => {
         <Routes>
           {/* Auth routes without navbar */}
           <Route path='/sign-up' element={<SignUp />} />
-          {/* <Route path='/signin' element={<SignIn />} /> */}
+          <Route path='/sign-in' element={<SignIn />} />
 
           <Route
             path='/'

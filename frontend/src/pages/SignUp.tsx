@@ -2,14 +2,22 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Eye, EyeOff, Mail, Phone } from "lucide-react";
+import api from "../service/ApiService";
+import toast from "react-hot-toast";
+import ApiRoutes from "../utils/ApiRoutes";
+import { useNavigate } from "react-router-dom";
+import LoadingSpinner from "../components/LoadingSpinner";
 
 const SignUp = () => {
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    phone: "",
+    phoneNumber: "",
     password: "",
+    role: "LENDER",
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -17,15 +25,28 @@ const SignUp = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
-    // Add your form submission logic here
+    setIsLoading(true);
+    try {
+      const response = await api.post(ApiRoutes.register.path, formData, {
+        authenticate: ApiRoutes.register.authenticate,
+      });
+      toast.success("Registration successful!");
+      navigate("/sign-in");
+    } catch (error) {
+      console.error("Error during registration:", error);
+      toast.error("Error in form submission. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className='px-8 pt-12'>
-      <h1 className='text-2xl font-bold text-center mb-1'>Get Started Now</h1>
+      <h1 className='text-2xl font-bold text-center mb-1 text-gray-700'>
+        Get Started Now
+      </h1>
       <p className='text-center text-gray-600 text-sm mb-6'>
         Create an Account or{" "}
         <Link to='/signin' className='text-[#670FC5]'>
@@ -74,15 +95,18 @@ const SignUp = () => {
         </div>
 
         <div className='space-y-2'>
-          <label htmlFor='phone' className='text-sm font-medium text-gray-700'>
+          <label
+            htmlFor='phoneNumber'
+            className='text-sm font-medium text-gray-700'
+          >
             Phone Number
           </label>
           <div className='relative'>
             <input
               type='tel'
               id='phone'
-              name='phone'
-              value={formData.phone}
+              name='phoneNumber'
+              value={formData.phoneNumber}
               onChange={handleChange}
               placeholder='Enter Your Number'
               className='w-full pl-12 pr-4 py-3 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#670FC5]'
@@ -128,12 +152,23 @@ const SignUp = () => {
 
         <button
           type='submit'
-          className='w-full py-3 bg-[#670FC5] hover:bg-purple-700 text-white font-medium rounded-full transition-colors'
+          disabled={isLoading}
+          className={`w-full py-3 ${
+            isLoading ? "bg-purple-400 cursor-not-allowed" : "bg-[#670FC5]"
+          } hover:bg-purple-700 text-white font-medium rounded-full transition-colors flex items-center justify-center`}
         >
-          SignUp
+          <span className='flex items-center gap-2'>
+            {isLoading ? (
+              <>
+                <span>Signing Up...</span>
+                <LoadingSpinner className='h-4 w-4 text-white' />
+              </>
+            ) : (
+              "SignUp"
+            )}
+          </span>
         </button>
       </form>
-
       <div className='text-center mt-6 text-sm'>
         Already have an account?{" "}
         <Link to='/signin' className='text-[#670FC5] font-medium'>
