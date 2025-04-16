@@ -24,7 +24,7 @@ interface Repayment {
 
 export default function CollectPayment() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [repayments, setRepayments] = useState<Repayment[]>([
+  const [repayments] = useState<Repayment[]>([
     {
       loanId: "25aa6e8d-b34a-4e16-92bc-5d8e0a41f47e",
       borrowerId: "ef848811-37fd-46ca-8d51-11197368a77c",

@@ -8,7 +8,7 @@ const api = axios.create({
   },
 });
 
-interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
+export interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
   authenticate?: boolean;
 }
 

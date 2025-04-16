@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import ApiRoutes from "../utils/ApiRoutes";
 import { useNavigate } from "react-router-dom";
 import LoadingSpinner from "../components/LoadingSpinner";
+import { CustomAxiosRequestConfig } from "../service/ApiService";
 
 const SignUp = () => {
   const navigate = useNavigate();
@@ -31,10 +32,10 @@ const SignUp = () => {
     try {
       await api.post(ApiRoutes.register.path, formData, {
         authenticate: ApiRoutes.register.authenticate,
-      });
+      } as CustomAxiosRequestConfig);
       toast.success("Registration successful!");
       navigate("/sign-in");
-    } catch (error) {
+    } catch {
       toast.error("Registration failed!");
     } finally {
       setIsLoading(false);

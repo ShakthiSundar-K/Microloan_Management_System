@@ -6,6 +6,7 @@ import { Eye, EyeOff, Phone } from "lucide-react";
 import LoadingSpinner from "../components/LoadingSpinner";
 import api from "../service/ApiService";
 import toast from "react-hot-toast";
+import { CustomAxiosRequestConfig } from "../service/ApiService";
 
 const SignIn = () => {
   const navigate = useNavigate();
@@ -19,17 +20,21 @@ const SignIn = () => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
+  type AuthResponse = {
+    token: string;
+  };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+
     try {
-      const response = await api.post(ApiRoutes.login.path, formData, {
+      const response = (await api.post(ApiRoutes.login.path, formData, {
         authenticate: ApiRoutes.login.authenticate,
-      });
+      } as CustomAxiosRequestConfig)) as AuthResponse;
       toast.success("Login successful!");
       localStorage.setItem("token", response.token);
       navigate("/");
-    } catch (error) {
+    } catch {
       toast.error("Login failed!");
     } finally {
       setIsLoading(false);

@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { HelpCircle, User, ArrowRight } from "lucide-react";
 import api from "../service/ApiService";
 import ApiRoutes from "../utils/ApiRoutes";
+import { CustomAxiosRequestConfig } from "../service/ApiService";
 
 const FinanceBannerSimple = () => {
   const [balance, setBalance] = useState<number>(0);
@@ -19,7 +20,7 @@ const FinanceBannerSimple = () => {
         const path = ApiRoutes.getLatestCapital.path.replace(":userId", userId);
         const response = await api.get(path, {
           authenticate: ApiRoutes.getLatestCapital.authenticate,
-        });
+        } as CustomAxiosRequestConfig);
         // console.log("Balance response:", response.data);
         setBalance(response.data.totalCapital);
       } catch (error) {
