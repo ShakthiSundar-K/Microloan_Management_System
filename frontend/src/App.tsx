@@ -6,6 +6,7 @@ import Layout from "./components/Layout";
 import Home from "./pages/Home";
 import MobileContainer from "./components/MobileContainer";
 import ProtectedRoute from "./utils/ProtectedRoute";
+import ForgotPassword from "./pages/ForgotPassword";
 
 const App = () => {
   return (
@@ -15,6 +16,7 @@ const App = () => {
           {/* Auth routes without navbar */}
           <Route path='/sign-up' element={<SignUp />} />
           <Route path='/sign-in' element={<SignIn />} />
+          <Route path='/forgot-password' element={<ForgotPassword />} />
 
           <Route
             path='/'

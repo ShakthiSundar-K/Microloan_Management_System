@@ -29,14 +29,13 @@ const SignUp = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const response = await api.post(ApiRoutes.register.path, formData, {
+      await api.post(ApiRoutes.register.path, formData, {
         authenticate: ApiRoutes.register.authenticate,
       });
       toast.success("Registration successful!");
       navigate("/sign-in");
     } catch (error) {
-      console.error("Error during registration:", error);
-      toast.error("Error in form submission. Please try again.");
+      toast.error("Registration failed!");
     } finally {
       setIsLoading(false);
     }
@@ -49,7 +48,7 @@ const SignUp = () => {
       </h1>
       <p className='text-center text-gray-600 text-sm mb-6'>
         Create an Account or{" "}
-        <Link to='/signin' className='text-[#670FC5]'>
+        <Link to='/sign-in' className='text-[#670FC5]'>
           Login in
         </Link>{" "}
         to explore about our app
@@ -108,7 +107,7 @@ const SignUp = () => {
               name='phoneNumber'
               value={formData.phoneNumber}
               onChange={handleChange}
-              placeholder='Enter Your Number'
+              placeholder='Enter Your phone number'
               className='w-full pl-12 pr-4 py-3 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#670FC5]'
               required
             />
@@ -164,14 +163,14 @@ const SignUp = () => {
                 <LoadingSpinner className='h-4 w-4 text-white' />
               </>
             ) : (
-              "SignUp"
+              "Sign Up"
             )}
           </span>
         </button>
       </form>
       <div className='text-center mt-6 text-sm'>
         Already have an account?{" "}
-        <Link to='/signin' className='text-[#670FC5] font-medium'>
+        <Link to='/sign-in' className='text-[#670FC5] font-medium'>
           SignIn
         </Link>
       </div>

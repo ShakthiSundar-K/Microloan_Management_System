@@ -51,7 +51,7 @@ const register = async (req:Request, res:Response):Promise<void> => {
 
     }
     catch(error){
-        res.status(500).json({ message: "Error in register constroller",error:(error as Error).message });
+        res.status(500).json({ message: "Error registering user",error:(error as Error).message });
     }
 };
 
