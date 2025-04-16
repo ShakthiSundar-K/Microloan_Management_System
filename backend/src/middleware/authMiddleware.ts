@@ -16,6 +16,7 @@ declare global {
 export const protect = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
         let token = req.headers.authorization;
+        // console.log("Incoming token:", token); // Log the incoming token for debugging
         if (!token) {
             res.status(401).json({ message: "No token, authorization denied" });
             return; // Exit the function after sending a response

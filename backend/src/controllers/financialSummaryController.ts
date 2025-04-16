@@ -105,10 +105,12 @@ const getDynamicFinancialSummaryController = async (
     
 
 const getLatestCapitalById = async (req:Request,res:Response) => {
+console.log("getLatestCapitalById called")
 if (!isLender(req, res)) return;
 
 try {
-    const userId = req.user.id; // or however you're extracting userId from auth
+    const userId = req.params.userId;
+    // console.log("User ID:", userId); // Log the userId for debugging
     const data = await getLatestCapital(userId);
     res.json({message:"Latest Capital fetched successfully",data});
   } catch (error) {

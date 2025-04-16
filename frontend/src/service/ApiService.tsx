@@ -15,11 +15,12 @@ interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
 api.interceptors.request.use(
   (config: CustomAxiosRequestConfig) => {
     //change the request object
-    const token = sessionStorage.getItem("token");
+    const token = localStorage.getItem("token");
     // console.log("Token:", token);
-    if (config.authenticate === true && token)
+    if (config.authenticate === true && token) {
+      // console.log("authenticating with token:", token);
       config.headers.Authorization = `Bearer ${token}`;
-
+    }
     return config;
   },
   (error) => Promise.reject(error)

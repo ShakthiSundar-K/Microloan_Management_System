@@ -7,6 +7,7 @@ import Home from "./pages/Home";
 import MobileContainer from "./components/MobileContainer";
 import ProtectedRoute from "./utils/ProtectedRoute";
 import ForgotPassword from "./pages/ForgotPassword";
+import CollectPayment from "./pages/CollectPayment";
 
 const App = () => {
   return (
@@ -27,7 +28,7 @@ const App = () => {
             }
           >
             <Route index element={<Home />} />
-            <Route path='profile' element={<div>Profile Page</div>} />
+            <Route path='/collect-payment' element={<CollectPayment />} />
             <Route path='settings' element={<div>Settings Page</div>} />
             {/* Add more protected routes here */}
           </Route>
