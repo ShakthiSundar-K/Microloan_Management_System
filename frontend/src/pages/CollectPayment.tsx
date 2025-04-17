@@ -1,5 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Search } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import api from "../service/ApiService";
+import ApiRoutes from "../utils/ApiRoutes";
+import { CustomAxiosRequestConfig } from "../service/ApiService";
+import toast from "react-hot-toast";
 
 interface Borrower {
   name: string;
@@ -24,124 +29,52 @@ interface Repayment {
 
 export default function CollectPayment() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [repayments] = useState<Repayment[]>([
-    {
-      loanId: "25aa6e8d-b34a-4e16-92bc-5d8e0a41f47e",
-      borrowerId: "ef848811-37fd-46ca-8d51-11197368a77c",
-      amountToPay: "300",
-      dueDate: "2025-04-17T03:18:56.384Z",
-      status: "Unpaid",
-      loan: {
-        pendingAmount: "11700",
-        dueDate: "2025-05-26T03:18:56.384Z",
-      },
-      borrower: {
-        name: "Rekha Juice",
-        phoneNumber: "1334267780",
-        address: "Near Axis Bank",
-      },
-    },
-    {
-      loanId: "b477c978-d7ed-40f5-864c-631d36631c64",
-      borrowerId: "074f80ad-f25b-4d8d-96e8-ed1a3aeaab71",
-      amountToPay: "200",
-      dueDate: "2025-04-17T03:19:59.357Z",
-      status: "Unpaid",
-      loan: {
-        pendingAmount: "7800",
-        dueDate: "2025-05-26T03:19:59.357Z",
-      },
-      borrower: {
-        name: "poo senthil",
-        phoneNumber: "1234567890",
-        address: "near A.R departmental store",
-      },
-    },
-    {
-      loanId: "dc761442-18f0-4cde-88a7-24504b0fa198",
-      borrowerId: "a8cb78d8-b948-4165-a339-9c774d1e0e16",
-      amountToPay: "500",
-      dueDate: "2025-04-17T03:21:41.424Z",
-      status: "Unpaid",
-      loan: {
-        pendingAmount: "36500",
-        dueDate: "2025-07-04T03:21:41.424Z",
-      },
-      borrower: {
-        name: "Ravi digital printing",
-        phoneNumber: "1234567780",
-        address: "Gandhi statue",
-      },
-    },
-    {
-      loanId: "7cb768d9-b21d-44d4-81b8-e1674ff18c7c",
-      borrowerId: "8f15eaf6-5d2b-4606-95a9-fe44075bd9ed",
-      amountToPay: "400",
-      dueDate: "2025-04-17T03:27:54.595Z",
-      status: "Unpaid",
-      loan: {
-        pendingAmount: "40000",
-        dueDate: "2025-08-05T03:27:54.595Z",
-      },
-      borrower: {
-        name: "Arun Pizza",
-        phoneNumber: "1334557780",
-        address: "Near Greens",
-      },
-    },
-    {
-      loanId: "5a8f0f6c-df21-4e94-a184-45bebe98dea2",
-      borrowerId: "a4fa7c92-6b13-4b2c-863b-ebfda4c00846",
-      amountToPay: "300",
-      dueDate: "2025-04-17T03:32:39.820Z",
-      status: "Unpaid",
-      loan: {
-        pendingAmount: "30000",
-        dueDate: "2025-08-05T03:32:39.820Z",
-      },
-      borrower: {
-        name: "Santhi",
-        phoneNumber: "1234267780",
-        address: "Singarathoppu",
-      },
-    },
-    {
-      loanId: "d48a8391-42c7-4c76-9ccb-2b8bd0362031",
-      borrowerId: "a4fa7c92-6b13-4b2c-863b-ebfda4c00846",
-      amountToPay: "300",
-      dueDate: "2025-04-17T11:20:36.760Z",
-      status: "Unpaid",
-      loan: {
-        pendingAmount: "30000",
-        dueDate: "2025-08-05T11:20:36.760Z",
-      },
-      borrower: {
-        name: "Santhi",
-        phoneNumber: "1234267780",
-        address: "Singarathoppu",
-      },
-    },
-  ]);
+  const [repayments, setRepayments] = useState<Repayment[]>([]);
+  const navigate = useNavigate();
 
-  const handleRecordPayment = (repayment: Repayment) => {
-    // Navigate to record-payment page with repayment details
-    console.log("Navigating to record-payment with:", repayment);
-    // In a real app, you would use router.push or window.location
-    // window.location.href = `/record-payment?data=${encodeURIComponent(JSON.stringify(repayment))}`;
+  const getRepayments = async (search: string = "") => {
+    try {
+      const response = await api.get(ApiRoutes.todayRepayments.path, {
+        authenticate: ApiRoutes.todayRepayments.authenticate,
+      } as CustomAxiosRequestConfig);
+
+      const filtered = response.data.filter((repayment: Repayment) =>
+        repayment.borrower.name.toLowerCase().includes(search.toLowerCase())
+      );
+
+      setRepayments(filtered);
+    } catch {
+      toast.error("Error fetching repayments!");
+    }
   };
+
+  useEffect(() => {
+    getRepayments();
+  }, []);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
+    const value = e.target.value;
+    setSearchTerm(value);
+    getRepayments(value); // fetch filtered fresh data from backend
   };
 
-  const filteredRepayments = repayments.filter((repayment) =>
-    repayment.borrower.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleRecordPayment = (repayment: Repayment) => {
+    navigate(`/record-payment/${repayment.borrowerId}/${repayment.loanId}`, {
+      state: {
+        name: repayment.borrower.name,
+        phoneNumber: repayment.borrower.phoneNumber,
+        address: repayment.borrower.address,
+        pendingAmount: repayment.loan.pendingAmount,
+        dueDate: repayment.loan.dueDate,
+        amountToPay: repayment.amountToPay,
+      },
+    });
+  };
 
   return (
     <div className='flex flex-col h-full'>
       {/* Header with Search */}
-      <div className='bg-[#002866] text-white px-4 pb-4 sticky top-0 z-10'>
+      <div className='bg-[#002866] text-white px-4 pb-7 sticky top-0 z-10'>
         <h1 className='text-xl font-bold mb-3 text-center'>
           Today's Repayments
         </h1>
@@ -161,13 +94,13 @@ export default function CollectPayment() {
 
       {/* Repayments List */}
       <div className='flex-1 overflow-auto p-4 bg-gray-50'>
-        {filteredRepayments.length === 0 ? (
+        {repayments.length === 0 ? (
           <div className='text-center py-10 text-gray-500'>
             No repayments found
           </div>
         ) : (
           <div className='space-y-4'>
-            {filteredRepayments.map((repayment, index) => (
+            {repayments.map((repayment, index) => (
               <div
                 key={index}
                 className='bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow duration-200'
