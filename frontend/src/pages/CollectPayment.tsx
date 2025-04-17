@@ -141,8 +141,10 @@ export default function CollectPayment() {
   return (
     <div className='flex flex-col h-full'>
       {/* Header with Search */}
-      <div className='bg-[#670FC5] text-white p-4 sticky top-0 z-10'>
-        <h1 className='text-xl font-bold mb-3'>Today's Repayments</h1>
+      <div className='bg-[#002866] text-white px-4 pb-4 sticky top-0 z-10'>
+        <h1 className='text-xl font-bold mb-3 text-center'>
+          Today's Repayments
+        </h1>
         <div className='relative'>
           <input
             type='text'
