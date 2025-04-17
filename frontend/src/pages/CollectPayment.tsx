@@ -74,21 +74,22 @@ export default function CollectPayment() {
   return (
     <div className='flex flex-col h-full'>
       {/* Header with Search */}
-      <div className='bg-[#002866] text-white px-4 pb-7 sticky top-0 z-10'>
-        <h1 className='text-xl font-bold mb-3 text-center'>
-          Today's Repayments
+      <div className='bg-[#002866] text-white px-4 pb-6 pt-4 sticky top-0 z-10 shadow-md border-b border-blue-900'>
+        <h1 className='text-2xl font-semibold text-center mb-4 tracking-wide'>
+          💰 Today's Repayments
         </h1>
+
         <div className='relative'>
+          <span className='absolute left-3 top-2.5 text-gray-400'>
+            <Search size={20} />
+          </span>
           <input
             type='text'
-            placeholder='Search borrowers...'
-            className='w-full py-2 px-4 pr-10 rounded-lg text-gray-800'
+            placeholder='Search by borrower name...'
+            className='w-full pl-10 pr-4 py-2 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#6f42c1] focus:border-transparent transition duration-200'
             value={searchTerm}
             onChange={handleSearch}
           />
-          <div className='absolute right-3 top-2.5'>
-            <Search size={20} className='text-gray-500' />
-          </div>
         </div>
       </div>
 
@@ -137,6 +138,7 @@ export default function CollectPayment() {
                   </div>
 
                   <button
+                    title='Record Payment'
                     onClick={() => handleRecordPayment(repayment)}
                     className='w-full bg-[#670FC5] hover:bg-[#5a0cb0] text-white font-medium py-2 px-4 rounded-md transition-colors duration-200'
                   >
