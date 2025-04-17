@@ -158,18 +158,18 @@ const RecordPayment = () => {
             <div className='flex items-center justify-center'>
               <div className='relative'>
                 <span className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500'>
-                  ₹
+                  ₹ :
                 </span>
                 {isEditing ? (
                   <input
                     type='number'
                     value={paymentAmount}
                     onChange={handleAmountChange}
-                    className='pl-8 pr-3 py-3 text-xl font-bold text-center border-2 border-[#670FC5] rounded-lg w-40 focus:outline-none focus:ring-2 focus:ring-purple-200'
+                    className='pl-6 pr-3 py-3 text-xl font-bold text-center border-2 border-[#670FC5] rounded-lg w-40 focus:outline-none focus:ring-2 focus:ring-purple-200'
                     autoFocus
                   />
                 ) : (
-                  <div className='pl-8 pr-3 py-3 text-xl font-bold bg-gray-50 rounded-lg w-40 text-center'>
+                  <div className='pl-6 pr-3 py-3 text-xl font-bold bg-gray-50 rounded-lg w-40 text-center'>
                     {paymentAmount}
                   </div>
                 )}
