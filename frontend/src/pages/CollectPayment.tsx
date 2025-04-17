@@ -72,7 +72,7 @@ export default function CollectPayment() {
   };
 
   return (
-    <div className='flex flex-col h-full mb-20'>
+    <div className='flex flex-col h-full pb-20'>
       {/* Header with Search */}
       <div className='bg-[#002866] text-white px-4 pb-6 pt-4 sticky top-0 z-10 shadow-md border-b border-blue-900'>
         <h1 className='text-2xl font-semibold text-center mb-4 tracking-wide'>

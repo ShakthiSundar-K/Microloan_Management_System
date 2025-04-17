@@ -47,9 +47,13 @@ const TopNavigation = () => {
 
         {/* Right section: Balance + Profile */}
         <div className='flex items-center gap-3'>
-          <div className='flex items-center bg-purple-700 py-1 px-4 rounded-full text-white text-sm'>
-            <span className='font-bold'>₹ {balance}</span>
+          {/* balance displayer */}
+          <div className='flex  justify-center'>
+            <div className=' bg-white/10 px-4 py-1 rounded-full text-sm text-white'>
+              ₹ {balance}
+            </div>
           </div>
+
           <button
             className='p-2 rounded-full bg-[#003080] text-white'
             title='User Profile'

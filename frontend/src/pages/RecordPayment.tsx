@@ -59,7 +59,7 @@ const RecordPayment = () => {
   };
 
   return (
-    <div className='flex flex-col h-full mb-20'>
+    <div className='flex flex-col h-full pb-20'>
       {/* Banner */}
       <div className='bg-[#002866] text-white p-4 relative'>
         <button
