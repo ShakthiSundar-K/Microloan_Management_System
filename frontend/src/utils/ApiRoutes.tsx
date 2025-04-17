@@ -1,18 +1,18 @@
 const ApiRoutes = {
   login: {
-    path: "/api/auth/login",
+    path: "/api/user/login",
     authenticate: false,
   },
   register: {
-    path: "/api/auth/register",
+    path: "/api/user/register",
     authenticate: false,
   },
   forgotPassword: {
-    path: "/api/auth/forgotPassword",
+    path: "/api/user/forgotPassword",
     authenticate: false,
   },
   resetPassword: {
-    path: "/api/auth/resetPassword",
+    path: "/api/user/resetPassword",
     authenticate: false,
   },
   createBorrower: {

@@ -9,7 +9,7 @@ import { generateMonthlyFinancialSummary,getMonthlyFinancialSummary,getDynamicFi
 
 const router = express.Router();
 
-router.use("/api/auth", authRoutes);
+router.use("/api/user", authRoutes);
 router.use("/api/borrower",borrowerRoutes);
 router.use("/api/loan",loanRoutes);
 router.use("/api/repayment",repaymentRoutes);
