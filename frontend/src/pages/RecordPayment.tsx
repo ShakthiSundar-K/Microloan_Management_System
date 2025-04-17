@@ -1,8 +1,7 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useLocation } from "react-router-dom";
 import {
   Pen,
-  Calendar,
   Phone,
   MapPin,
   Wallet,
@@ -34,7 +33,7 @@ const RecordPayment = () => {
     setIsEditing(!isEditing);
   };
 
-  const handleAmountChange = (e) => {
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPaymentAmount(e.target.value);
   };
 
@@ -64,6 +63,7 @@ const RecordPayment = () => {
       {/* Banner */}
       <div className='bg-[#002866] text-white p-4 relative'>
         <button
+          title='Go Back'
           className='absolute left-2 top-4 flex items-center text-white'
           onClick={() => window.history.back()}
         >
