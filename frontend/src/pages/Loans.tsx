@@ -12,7 +12,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import ApiRoutes from "../utils/ApiRoutes";
-import api from "../service/ApiService";
+import api, { CustomAxiosRequestConfig } from "../service/ApiService";
 import { toast } from "react-hot-toast";
 
 // Define TypeScript interfaces
@@ -85,11 +85,12 @@ const Loans: React.FC = () => {
       const response = await api.get(ApiRoutes.filterLoans.path, {
         params: filters,
         authenticate: ApiRoutes.filterLoans.authenticate,
-      });
+      } as CustomAxiosRequestConfig);
 
       setLoans(response.data);
       setLoading(false);
-    } catch (error) {
+      toast.success("Loans fetched successfully!");
+    } catch {
       toast.error("Failed to fetch loans");
       setLoading(false);
     }

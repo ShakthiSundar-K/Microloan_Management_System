@@ -460,9 +460,9 @@ export default function HistoryPage() {
 
       {/* Filter Modal */}
       {showFilters && (
-        <div className='fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end justify-center p-4'>
-          <div className='bg-white rounded-t-xl w-full max-w-md transform transition-transform duration-300 ease-out'>
-            <div className='flex justify-between items-center p-4 border-b border-gray-200'>
+        <div className='fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4'>
+          <div className='bg-white rounded-xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col shadow-xl transform transition-transform duration-300 ease-out'>
+            <div className='sticky top-0 bg-white flex justify-between items-center p-4 border-b border-gray-200 z-10'>
               <h3 className='font-bold text-lg'>
                 Filter {activeTab === "repayment" ? "Repayments" : "Loans"}
               </h3>
@@ -475,7 +475,7 @@ export default function HistoryPage() {
               </button>
             </div>
 
-            <div className='p-4 max-h-[70vh] overflow-y-auto'>
+            <div className='overflow-y-auto flex-1 p-4'>
               {/* Time Period */}
               <div className='mb-5'>
                 <label className='block text-sm font-medium text-gray-700 mb-2'>
@@ -599,19 +599,21 @@ export default function HistoryPage() {
             </div>
 
             {/* Action Buttons */}
-            <div className='flex p-4 border-t border-gray-200'>
-              <button
-                onClick={resetFilters}
-                className='flex-1 py-2.5 mr-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors'
-              >
-                Reset
-              </button>
-              <button
-                onClick={applyFilters}
-                className='flex-1 py-2.5 bg-[#670FC5] hover:bg-[#5a0cb0] text-white font-medium rounded-lg transition-colors'
-              >
-                Apply Filters
-              </button>
+            <div className='border-t border-gray-200 p-4 bg-white'>
+              <div className='flex gap-3'>
+                <button
+                  onClick={resetFilters}
+                  className='flex-1 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors'
+                >
+                  Reset
+                </button>
+                <button
+                  onClick={applyFilters}
+                  className='flex-1 py-2.5 bg-[#670FC5] hover:bg-[#5a0cb0] text-white font-medium rounded-lg transition-colors'
+                >
+                  Apply Filters
+                </button>
+              </div>
             </div>
           </div>
         </div>
