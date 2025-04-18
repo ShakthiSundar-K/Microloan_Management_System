@@ -85,6 +85,7 @@ export default function CollectPayment() {
       {/* Enhanced Banner */}
       <div className='bg-[#002866] text-white px-4 pb-6 pt-4 relative'>
         <button
+          title='GO BACK'
           className='absolute left-2 top-4 flex items-center text-white'
           onClick={handleBack}
         >

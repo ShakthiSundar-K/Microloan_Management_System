@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import {
   Pen,
   Phone,
@@ -9,8 +9,15 @@ import {
   ArrowLeft,
   Check,
 } from "lucide-react";
+import ApiRoutes from "../utils/ApiRoutes";
+import api from "../service/ApiService";
+import { CustomAxiosRequestConfig } from "../service/ApiService";
+import { toast } from "react-hot-toast";
 
 const RecordPayment = () => {
+  const { borrowerId, loanId } = useParams();
+  //   console.log("borrowerId:", borrowerId);
+  //   console.log("loanId:", loanId);
   const location = useLocation();
   const { name, phoneNumber, address, pendingAmount, dueDate, amountToPay } =
     location.state;
@@ -41,17 +48,28 @@ const RecordPayment = () => {
     setShowConfirmation(true);
   };
 
-  const confirmPayment = () => {
+  const confirmPayment = async () => {
     setShowConfirmation(false);
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      // API call would go here
-      // Example: recordPayment(borrowerId, loanId, paymentAmount);
+    try {
+      if (borrowerId && loanId) {
+        const path = ApiRoutes.rcordPayment.path
+          .replace("borrowerId", borrowerId)
+          .replace("loanId", loanId);
+
+        await api.post(path, paymentAmount, {
+          authenticate: ApiRoutes.rcordPayment.authenticate,
+        } as CustomAxiosRequestConfig);
+        setIsLoading(false);
+        toast.success("Payment recorded successfully!");
+      } else {
+        console.error("borrowerId or loanId is undefined");
+      }
+    } catch {
+      toast.error("Error recording payment. Please try again.");
       setIsLoading(false);
-      // Handle success - redirect or show success message
-    }, 2000);
+    }
   };
 
   const cancelPayment = () => {
