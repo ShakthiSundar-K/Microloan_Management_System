@@ -9,22 +9,50 @@ import {
   Wallet,
   Calendar,
   Clock,
-  BadgeCheck,
   AlertCircle,
 } from "lucide-react";
 import ApiRoutes from "../utils/ApiRoutes";
 import api from "../service/ApiService";
 import { toast } from "react-hot-toast";
 
-const Loans = () => {
+// Define TypeScript interfaces
+interface Borrower {
+  borrowerId: string;
+  name: string;
+  phoneNumber: string;
+  address: string;
+}
+
+interface Loan {
+  loanId: string;
+  principalAmount: string;
+  pendingAmount: string;
+  issuedAt: string;
+  status: string;
+  dueDate: string;
+  daysToRepay: string[];
+  borrower: Borrower;
+}
+
+interface FilterOptions {
+  status: string;
+  minPrincipalAmt: string;
+  maxPrincipalAmt: string;
+  minPendingAmt: string;
+  maxPendingAmt: string;
+  dueDate: string;
+  daysToRepay: string[];
+}
+
+const Loans: React.FC = () => {
   const navigate = useNavigate();
-  const [loans, setLoans] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [showFilters, setShowFilters] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [loans, setLoans] = useState<Loan[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [showFilters, setShowFilters] = useState<boolean>(false);
+  const [searchQuery, setSearchQuery] = useState<string>("");
 
   // Filter state
-  const [filterOptions, setFilterOptions] = useState({
+  const [filterOptions, setFilterOptions] = useState<FilterOptions>({
     status: "",
     minPrincipalAmt: "",
     maxPrincipalAmt: "",
@@ -68,7 +96,10 @@ const Loans = () => {
   };
 
   // Handle filter changes
-  const handleFilterChange = (name, value) => {
+  const handleFilterChange = (
+    name: keyof FilterOptions,
+    value: string | string[]
+  ) => {
     setFilterOptions((prev) => ({
       ...prev,
       [name]: value,
@@ -76,7 +107,7 @@ const Loans = () => {
   };
 
   // Toggle day selection in filter
-  const toggleDaySelection = (day) => {
+  const toggleDaySelection = (day: string) => {
     setFilterOptions((prev) => {
       const currentDays = [...prev.daysToRepay];
       if (currentDays.includes(day)) {
@@ -118,7 +149,7 @@ const Loans = () => {
   };
 
   // Handle search
-  const handleSearch = (e) => {
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
   };
 
@@ -130,7 +161,7 @@ const Loans = () => {
   );
 
   // Format date
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
       year: "numeric",
@@ -140,7 +171,7 @@ const Loans = () => {
   };
 
   // Generate status badge class
-  const getStatusBadgeClass = (status) => {
+  const getStatusBadgeClass = (status: string): string => {
     switch (status) {
       case "Active":
         return "bg-green-100 text-green-800";
@@ -154,14 +185,14 @@ const Loans = () => {
   };
 
   // Navigate to loan details
-  const goToLoanDetails = (loan) => {
-    navigate(`/loan/${loan.loanId}`, { state: loan });
+  const goToLoanDetails = (loanId: string) => {
+    navigate(`/loan/${loanId}`);
   };
 
   return (
     <div className='flex flex-col h-full pb-20'>
-      {/* Banner */}
-      <div className='bg-[#002866] text-white p-4 relative'>
+      {/* Banner - Updated as requested */}
+      <div className='bg-[#002866] text-white px-4 pb-6 pt-4 relative'>
         <button
           title='Go Back'
           className='absolute left-2 top-4 flex items-center text-white'
@@ -169,34 +200,38 @@ const Loans = () => {
         >
           <ArrowLeft size={20} />
         </button>
-
         <div className='text-center pt-6 pb-4'>
           <h1 className='text-xl font-bold mb-2'>Manage Loans</h1>
           <p className='text-sm opacity-80'>
             View and filter all active and past loans
           </p>
+          <div className='flex justify-center mt-4'>
+            <div className='bg-white/10 px-4 py-2 rounded-full text-sm flex items-center'>
+              <Wallet size={16} className='mr-2' />
+              <span>{filteredLoans.length} loans found</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Search and Filter Bar */}
+      {/* Improved Search and Filter Bar */}
       <div className='bg-white shadow-md p-4 sticky top-0 z-10'>
-        <div className='flex items-center gap-2'>
+        <div className='flex items-center gap-3'>
           <div className='relative flex-1'>
-            <Search
-              size={18}
-              className='absolute left-3 top-2.5 text-gray-400'
-            />
+            <div className='absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none'>
+              <Search size={18} className='text-gray-400' />
+            </div>
             <input
               type='text'
               placeholder='Search borrower name or phone...'
               value={searchQuery}
               onChange={handleSearch}
-              className='w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#670FC5] focus:border-[#670FC5]'
+              className='w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#670FC5] focus:border-transparent shadow-sm text-sm'
             />
           </div>
           <button
             onClick={handleFilterToggle}
-            className='p-2.5 bg-[#670FC5] text-white rounded-lg flex items-center justify-center'
+            className='p-2.5 bg-[#670FC5] text-white rounded-lg flex items-center justify-center shadow-sm hover:bg-[#5a0cb0] transition-colors'
           >
             <Filter size={18} />
           </button>
@@ -204,7 +239,7 @@ const Loans = () => {
       </div>
 
       {/* Main Content */}
-      <div className='flex-1 bg-gray-50 p-4'>
+      <div className='flex-1 bg-gray-50 p-4 overflow-y-auto'>
         {loading ? (
           <div className='flex justify-center items-center h-40'>
             <div className='animate-spin rounded-full h-10 w-10 border-b-2 border-[#670FC5]'></div>
@@ -214,12 +249,13 @@ const Loans = () => {
             {filteredLoans.map((loan) => (
               <div
                 key={loan.loanId}
-                onClick={() => goToLoanDetails(loan)}
+                onClick={() => goToLoanDetails(loan.loanId)}
                 className='bg-white rounded-lg shadow-sm p-4 cursor-pointer transition-all hover:shadow-md'
               >
+                {/* Header with borrower info and status - Improved alignment */}
                 <div className='flex items-center justify-between mb-3'>
                   <div className='flex items-center gap-3'>
-                    <div className='bg-[#F3EFFC] p-2 rounded-full'>
+                    <div className='bg-[#F3EFFC] p-2 rounded-full flex items-center justify-center'>
                       <UserRound size={20} className='text-[#670FC5]' />
                     </div>
                     <div>
@@ -240,44 +276,65 @@ const Loans = () => {
                   </span>
                 </div>
 
-                <div className='grid grid-cols-2 gap-4 mt-4'>
+                {/* Financial details - Improved vertical alignment */}
+                <div className='grid grid-cols-2 gap-4 mb-4'>
                   <div className='flex items-center gap-2'>
-                    <Wallet size={16} className='text-gray-400' />
+                    <div className='bg-green-50 p-1.5 rounded-full flex items-center justify-center w-6 h-6'>
+                      <Wallet size={14} className='text-green-600' />
+                    </div>
                     <div>
                       <p className='text-xs text-gray-500'>Principal</p>
-                      <p className='font-medium'>₹{loan.principalAmount}</p>
+                      <p className='font-medium text-gray-800'>
+                        ₹{loan.principalAmount}
+                      </p>
                     </div>
                   </div>
-                  <div className='flex items-center gap-2'>
-                    <Wallet size={16} className='text-gray-400' />
+                  <div className='flex items-center gap-2 justify-end'>
+                    <div className='bg-orange-50 p-1.5 rounded-full flex items-center justify-center w-6 h-6'>
+                      <Wallet size={14} className='text-orange-600' />
+                    </div>
                     <div>
                       <p className='text-xs text-gray-500'>Pending</p>
-                      <p className='font-medium'>₹{loan.pendingAmount}</p>
-                    </div>
-                  </div>
-                  <div className='flex items-center gap-2'>
-                    <Calendar size={16} className='text-gray-400' />
-                    <div>
-                      <p className='text-xs text-gray-500'>Issue Date</p>
-                      <p className='font-medium'>{formatDate(loan.issuedAt)}</p>
-                    </div>
-                  </div>
-                  <div className='flex items-center gap-2'>
-                    <Clock size={16} className='text-gray-400' />
-                    <div>
-                      <p className='text-xs text-gray-500'>Due Date</p>
-                      <p className='font-medium'>{formatDate(loan.dueDate)}</p>
+                      <p className='font-medium text-gray-800'>
+                        ₹{loan.pendingAmount}
+                      </p>
                     </div>
                   </div>
                 </div>
 
-                <div className='mt-4 pt-3 border-t border-gray-100'>
-                  <p className='text-xs text-gray-500 mb-2'>Repayment Days</p>
-                  <div className='flex flex-wrap gap-1'>
+                {/* Date details - Improved vertical alignment */}
+                <div className='grid grid-cols-2 gap-4 mb-4'>
+                  <div className='flex items-center gap-2'>
+                    <div className='bg-blue-50 p-1.5 rounded-full flex items-center justify-center w-6 h-6'>
+                      <Calendar size={14} className='text-blue-500' />
+                    </div>
+                    <div>
+                      <p className='text-xs text-gray-500'>Issued</p>
+                      <p className='text-sm'>{formatDate(loan.issuedAt)}</p>
+                    </div>
+                  </div>
+
+                  <div className='flex items-center gap-2 justify-end'>
+                    <div className='bg-purple-50 p-1.5 rounded-full flex items-center justify-center w-6 h-6'>
+                      <Clock size={14} className='text-purple-500' />
+                    </div>
+                    <div>
+                      <p className='text-xs text-gray-500'>Due Date</p>
+                      <p className='text-sm'>{formatDate(loan.dueDate)}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Repayment days - Smaller and more compact */}
+                <div className='border-t border-gray-100 pt-3 mt-2'>
+                  <div className='ps-2'>
+                    <p className='text-xs text-gray-500 '>Repayment Days</p>
+                  </div>
+                  <div className='flex flex-wrap gap-1 pt-3'>
                     {loan.daysToRepay.map((day) => (
                       <span
                         key={day}
-                        className='text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded'
+                        className='text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full'
                       >
                         {day.slice(0, 3)}
                       </span>
@@ -298,11 +355,11 @@ const Loans = () => {
         )}
       </div>
 
-      {/* Filter Drawer */}
+      {/* Filter Modal - Centered in the screen with scrollable content */}
       {showFilters && (
-        <div className='fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end justify-center p-4'>
-          <div className='bg-white rounded-t-xl w-full max-w-md transform transition-transform duration-300 ease-out'>
-            <div className='flex justify-between items-center p-4 border-b border-gray-200'>
+        <div className='fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center px-4 pb-8'>
+          <div className='bg-white rounded-xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col shadow-xl'>
+            <div className='sticky top-0 bg-white flex justify-between items-center p-4 border-b border-gray-200 z-10'>
               <h3 className='font-bold text-lg'>Filter Loans</h3>
               <button
                 title='filter close'
@@ -313,7 +370,7 @@ const Loans = () => {
               </button>
             </div>
 
-            <div className='p-4 max-h-[70vh] overflow-y-auto'>
+            <div className='overflow-y-auto flex-1 p-4'>
               {/* Loan Status */}
               <div className='mb-5'>
                 <label className='block text-sm font-medium text-gray-700 mb-2'>
@@ -326,8 +383,8 @@ const Loans = () => {
                 >
                   <option value=''>All Statuses</option>
                   <option value='Active'>Active</option>
-                  <option value='Overdue'>Overdue</option>
-                  <option value='Completed'>Completed</option>
+                  <option value='Closed'>Closed</option>
+                  <option value='Defaulted'>Defaulted</option>
                 </select>
               </div>
 
@@ -440,17 +497,17 @@ const Loans = () => {
                 />
               </div>
 
-              {/* Repayment Days */}
+              {/* Repayment Days - Compact Selection */}
               <div className='mb-5 border-t border-gray-100 pt-4'>
                 <label className='block text-sm font-medium text-gray-700 mb-2'>
                   Repayment Days
                 </label>
-                <div className='grid grid-cols-4 gap-2'>
+                <div className='grid grid-cols-7 gap-1'>
                   {daysOfWeek.map((day) => (
                     <div
                       key={day}
                       onClick={() => toggleDaySelection(day)}
-                      className={`flex items-center justify-center p-2 border rounded-md cursor-pointer text-center ${
+                      className={`flex items-center justify-center py-1.5 border rounded-md cursor-pointer text-center text-xs ${
                         filterOptions.daysToRepay.includes(day)
                           ? "bg-[#670FC5] text-white border-[#670FC5]"
                           : "border-gray-300 text-gray-700 hover:bg-gray-50"
@@ -461,26 +518,27 @@ const Loans = () => {
                   ))}
                 </div>
                 <p className='text-xs text-gray-500 mt-2'>
-                  Select days to filter loans that require repayment on all
-                  selected days
+                  Select days to filter loans
                 </p>
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className='flex p-4 border-t border-gray-200'>
-              <button
-                onClick={resetFilters}
-                className='flex-1 py-2.5 mr-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors'
-              >
-                Reset
-              </button>
-              <button
-                onClick={applyFilters}
-                className='flex-1 py-2.5 bg-[#670FC5] hover:bg-[#5a0cb0] text-white font-medium rounded-lg transition-colors'
-              >
-                Apply Filters
-              </button>
+            {/* Action Buttons - Fixed at the bottom */}
+            <div className='border-t border-gray-200 p-4 bg-white'>
+              <div className='flex gap-3'>
+                <button
+                  onClick={resetFilters}
+                  className='flex-1 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors'
+                >
+                  Reset
+                </button>
+                <button
+                  onClick={applyFilters}
+                  className='flex-1 py-2.5 bg-[#670FC5] hover:bg-[#5a0cb0] text-white font-medium rounded-lg transition-colors'
+                >
+                  Apply Filters
+                </button>
+              </div>
             </div>
           </div>
         </div>
