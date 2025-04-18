@@ -29,6 +29,7 @@ interface RepaymentItem {
 interface LoanItem {
   loanId: string;
   principalAmount: number;
+  issuedAt?: string;
   borrower?: {
     borrowerId: string;
     name: string;
