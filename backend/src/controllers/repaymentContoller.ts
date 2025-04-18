@@ -16,6 +16,12 @@ const recordPaymentController = async (req: Request, res: Response): Promise< vo
         const { id } = req.user;
         const { amountPaid } = req.body;
 
+        //  console.log("📩 Incoming payment request");
+        // console.log("👉 borrowerId:", borrowerId);
+        // console.log("👉 loanId:", loanId);
+        // console.log("👉 collectedBy (user id):", id);
+        // console.log("👉 amountPaid:", amountPaid);
+
         if (!amountPaid || amountPaid <= 0) {
              res.status(400).json({ message: "Invalid payment amount" });
              return;

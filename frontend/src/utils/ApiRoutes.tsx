@@ -79,7 +79,7 @@ const ApiRoutes = {
     path: "/api/loan",
     authenticate: true,
   },
-  rcordPayment: {
+  recordPayment: {
     path: "/api/repayment/record-payment/:borrowerId/:loanId",
     authenticate: true,
   },

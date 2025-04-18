@@ -7,7 +7,8 @@ const recordPayment = async (
     amountPaid: number, 
     collectedById: string
 ) => {
-    return await prisma.$transaction(async (tx) => {
+    try{
+     return await prisma.$transaction(async (tx) => {
         const today = new Date();
         today.setHours(0, 0, 0, 0); // Normalize today's date
 
@@ -20,7 +21,7 @@ const recordPayment = async (
         let remainingAmount = amountPaid;
         let updates = [];
 
-        console.log("🔍 Fetching repayments...");
+        // console.log("🔍 Fetching repayments...");
 
         // **1️⃣ Fetch repayments in correct order**
         const [unpaidToday, missedOrPending, futureRepayments] = await Promise.all([
@@ -52,8 +53,8 @@ const recordPayment = async (
             }),
         ]);
 
-        console.log("🔍 Today's Unpaid Repayment:", unpaidToday);
-        console.log("🔍 Missed/Pending Repayments:", missedOrPending);
+        // console.log("🔍 Today's Unpaid Repayment:", unpaidToday);
+        // console.log("🔍 Missed/Pending Repayments:", missedOrPending);
 
         // **2️⃣ Step 1: Process Today's Unpaid Repayment First**
         if (unpaidToday && remainingAmount > 0) {
@@ -108,7 +109,7 @@ const recordPayment = async (
 
             let isPending = !isFullyPaid;
 
-            console.log(`➡️ Updating repayment ${repayment.repaymentId}: ${newStatus}, Amount Paid: ${toPay}`);
+            // console.log(`➡️ Updating repayment ${repayment.repaymentId}: ${newStatus}, Amount Paid: ${toPay}`);
 
             updates.push(tx.repayments.update({
                 where: { repaymentId: repayment.repaymentId },
@@ -140,7 +141,7 @@ const recordPayment = async (
             let newStatus = isFullyPaid ? "Paid_in_Advance" : "Unpaid";
             let isPending = !isFullyPaid;
 
-            console.log(`➡️ Updating repayment ${repayment.repaymentId}: ${newStatus}, Amount Paid: ${toPay}`);
+            // console.log(`➡️ Updating repayment ${repayment.repaymentId}: ${newStatus}, Amount Paid: ${toPay}`);
 
             updates.push(tx.repayments.update({
                 where: { repaymentId: repayment.repaymentId },
@@ -160,9 +161,12 @@ const recordPayment = async (
         }
 
         // **5️⃣ Update Loan Balance**
-        console.log("🔄 Updating Loan Balance...");
-        await tx.$executeRaw`UPDATE "Loans" SET "pendingAmount" = "pendingAmount" - ${amountPaid} WHERE "loanId" = ${loanId}`;
-
+        // console.log("🔄 Updating Loan Balance...");
+        await tx.$executeRaw`
+        UPDATE "Loans"
+        SET "pendingAmount" = "pendingAmount" - ${amountPaid}::numeric
+        WHERE "loanId" = ${loanId}
+        `;
         await tx.repaymentHistory.create({
             data: {
                 borrowerId,
@@ -177,6 +181,11 @@ const recordPayment = async (
 
         await Promise.all(updates);
     });
+    }catch (err) {
+      console.error("🔥 Error inside recordPayment:", (err as Error).message);
+      throw err;
+    }
+    
 };
 
 

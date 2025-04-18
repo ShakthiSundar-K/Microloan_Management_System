@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useLocation, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   Pen,
   Phone,
@@ -16,11 +16,11 @@ import { toast } from "react-hot-toast";
 
 const RecordPayment = () => {
   const { borrowerId, loanId } = useParams();
-  //   console.log("borrowerId:", borrowerId);
-  //   console.log("loanId:", loanId);
+
   const location = useLocation();
   const { name, phoneNumber, address, pendingAmount, dueDate, amountToPay } =
     location.state;
+  const navigate = useNavigate();
 
   const [isEditing, setIsEditing] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState(amountToPay);
@@ -53,19 +53,26 @@ const RecordPayment = () => {
     setIsLoading(true);
 
     try {
-      if (borrowerId && loanId) {
-        const path = ApiRoutes.rcordPayment.path
-          .replace("borrowerId", borrowerId)
-          .replace("loanId", loanId);
-
-        await api.post(path, paymentAmount, {
-          authenticate: ApiRoutes.rcordPayment.authenticate,
-        } as CustomAxiosRequestConfig);
+      if (!borrowerId || !loanId) {
+        console.error("Missing route params");
+        toast.error("Params are missing. Please try again.");
         setIsLoading(false);
-        toast.success("Payment recorded successfully!");
-      } else {
-        console.error("borrowerId or loanId is undefined");
+        return;
       }
+      console.log("borrowerId:", borrowerId);
+      console.log("loanId:", loanId);
+      const path = ApiRoutes.recordPayment.path
+        .replace(":borrowerId", borrowerId)
+        .replace(":loanId", loanId);
+      console.log("API Path:", path);
+      console.log("Payment Amount:", paymentAmount);
+
+      await api.post(path, { amountPaid: paymentAmount }, {
+        authenticate: ApiRoutes.recordPayment.authenticate,
+      } as CustomAxiosRequestConfig);
+      setIsLoading(false);
+      toast.success("Payment recorded successfully!");
+      navigate("/");
     } catch {
       toast.error("Error recording payment. Please try again.");
       setIsLoading(false);
