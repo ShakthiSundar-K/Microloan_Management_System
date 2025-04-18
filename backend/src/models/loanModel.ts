@@ -327,7 +327,7 @@ const getLoanHistory = async (
 
     // **If no loans found**
     if (loanHistory.length === 0) {
-        throw new Error("Loan not found");
+        return [];
     }
 
     // **Return the loan history**

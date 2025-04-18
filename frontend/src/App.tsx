@@ -9,6 +9,7 @@ import ProtectedRoute from "./utils/ProtectedRoute";
 import ForgotPassword from "./pages/ForgotPassword";
 import CollectPayment from "./pages/CollectPayment";
 import RecordPayment from "./pages/RecordPayment";
+import PaymentHistory from "./pages/PaymentHistory";
 
 const App = () => {
   return (
@@ -34,6 +35,7 @@ const App = () => {
               path='/record-payment/:borrowerId/:loanId'
               element={<RecordPayment />}
             />
+            <Route path='/repayment-history' element={<PaymentHistory />} />
             {/* Add more protected routes here */}
           </Route>
         </Routes>

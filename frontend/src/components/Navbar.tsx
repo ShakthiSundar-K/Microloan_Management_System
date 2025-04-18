@@ -29,7 +29,7 @@ const Navbar = () => {
 
         {/* History (Clock Icon) */}
         <Link
-          to='/history'
+          to='/repayment-history'
           className='flex flex-col items-center text-gray-600 hover:text-purple-600'
         >
           <Clock size={20} />

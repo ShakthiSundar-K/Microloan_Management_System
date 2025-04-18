@@ -171,6 +171,7 @@ const RecordPayment = () => {
                 Payment Amount
               </h2>
               <button
+                title='edit amount'
                 onClick={handleEditToggle}
                 className='p-2 text-[#670FC5] rounded-full hover:bg-purple-50'
               >
