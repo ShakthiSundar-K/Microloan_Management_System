@@ -31,6 +31,7 @@ const HomePage = () => {
     pendingLoanAmount: "0",
   });
   const [isLoading, setIsLoading] = useState(true);
+  const userId = localStorage.getItem("id");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -44,21 +45,22 @@ const HomePage = () => {
           } as CustomAxiosRequestConfig
         );
 
-        if (collectionResponse.data && collectionResponse.data.data) {
-          setCollectionStatus(collectionResponse.data.data);
+        if (collectionResponse.data) {
+          setCollectionStatus(collectionResponse.data);
         }
-
+        if (!userId) {
+          console.error("User ID not found in localStorage");
+          return;
+        }
         // Fetch capital data
-        const userId = "0114a86e-1b18-4ed4-b8d5-edecde90bd39"; // Replace with actual user ID from auth context
-        const capitalResponse = await api.get(
-          ApiRoutes.getLatestCapital.path.replace(":userId", userId),
-          {
-            authenticate: ApiRoutes.getLatestCapital.authenticate,
-          } as CustomAxiosRequestConfig
-        );
+        const path = ApiRoutes.getLatestCapital.path.replace(":userId", userId);
 
-        if (capitalResponse.data && capitalResponse.data.data) {
-          setCapital(capitalResponse.data.data);
+        const capitalResponse = await api.get(path, {
+          authenticate: ApiRoutes.getLatestCapital.authenticate,
+        } as CustomAxiosRequestConfig);
+
+        if (capitalResponse.data) {
+          setCapital(capitalResponse.data);
         }
       } catch (error) {
         toast.error("Failed to fetch data");
@@ -69,7 +71,7 @@ const HomePage = () => {
     };
 
     fetchData();
-  }, []);
+  }, [userId]);
 
   // Calculate collection percentage
   const collectionPercentage =
@@ -87,7 +89,8 @@ const HomePage = () => {
   };
 
   return (
-    <div className='flex flex-col bg-gray-50 pb-20'>
+    // Added the pb-24 class to create space for the bottom navigation bar
+    <div className='flex flex-col bg-gray-50 min-h-screen pb-24'>
       {/* Quick Access Section */}
       <div className='px-5 py-6'>
         <h2 className='text-lg font-semibold text-gray-800 mb-5'>
@@ -95,7 +98,7 @@ const HomePage = () => {
         </h2>
         <div className='grid grid-cols-3 gap-6'>
           <div
-            className='flex flex-col items-center'
+            className='flex flex-col items-center cursor-pointer'
             onClick={() => handleNavigation("/loans")}
           >
             <div className='w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center shadow-sm'>
@@ -107,7 +110,7 @@ const HomePage = () => {
           </div>
 
           <div
-            className='flex flex-col items-center'
+            className='flex flex-col items-center cursor-pointer'
             onClick={() => handleNavigation("/borrowers")}
           >
             <div className='w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center shadow-sm'>
@@ -119,7 +122,7 @@ const HomePage = () => {
           </div>
 
           <div
-            className='flex flex-col items-center'
+            className='flex flex-col items-center cursor-pointer'
             onClick={() => handleNavigation("/new-loan")}
           >
             <div className='w-16 h-16 rounded-full bg-green-100 flex items-center justify-center shadow-sm'>
@@ -139,7 +142,7 @@ const HomePage = () => {
           <div className='grid grid-cols-1 sm:grid-cols-2 gap-5'>
             {/* Today's Collection Status */}
             <div
-              className='bg-white rounded-xl p-5 shadow-sm border border-gray-100 relative overflow-hidden'
+              className='bg-white rounded-xl p-5 shadow-sm border border-gray-100 relative overflow-hidden cursor-pointer'
               onClick={() => handleNavigation("/collection-status")}
             >
               <div className='relative z-10'>
@@ -187,7 +190,7 @@ const HomePage = () => {
 
             {/* Cash in Hand */}
             <div
-              className='bg-white rounded-xl p-5 shadow-sm border border-gray-100 relative overflow-hidden'
+              className='bg-white rounded-xl p-5 shadow-sm border border-gray-100 relative overflow-hidden cursor-pointer'
               onClick={() => handleNavigation("/capital")}
             >
               <div className='relative z-10'>
@@ -224,7 +227,7 @@ const HomePage = () => {
           <div className='grid grid-cols-1 sm:grid-cols-2 gap-5'>
             {/* Register Existing Loans */}
             <div
-              className='bg-white rounded-xl p-5 shadow-sm border border-gray-100 relative overflow-hidden'
+              className='bg-white rounded-xl p-5 shadow-sm border border-gray-100 relative overflow-hidden cursor-pointer'
               onClick={() => handleNavigation("/register-loan")}
             >
               <div className='relative z-10'>
@@ -253,7 +256,7 @@ const HomePage = () => {
 
             {/* Close Today's Repayment */}
             <div
-              className='bg-white rounded-xl p-5 shadow-sm border border-gray-100 relative overflow-hidden'
+              className='bg-white rounded-xl p-5 shadow-sm border border-gray-100 relative overflow-hidden cursor-pointer'
               onClick={() => handleNavigation("/close-repayments")}
             >
               <div className='relative z-10'>
@@ -282,10 +285,10 @@ const HomePage = () => {
           </div>
 
           {/* Third row - Full width card */}
-          <div className='mt-1'>
+          <div className='mt-1 mb-2'>
             {/* Financial Reports */}
             <div
-              className='bg-gradient-to-r from-[#002866] to-[#003580] rounded-xl p-6 shadow-md text-white relative overflow-hidden'
+              className='bg-gradient-to-r from-[#002866] to-[#003580] rounded-xl p-6 shadow-md text-white relative overflow-hidden cursor-pointer'
               onClick={() => handleNavigation("/reports")}
             >
               <div className='relative z-10'>
