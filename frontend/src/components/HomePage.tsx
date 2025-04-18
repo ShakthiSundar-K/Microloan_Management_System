@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { To, useNavigate } from "react-router-dom";
 import {
   BookOpen,
   Users,
@@ -82,7 +82,7 @@ const HomePage = () => {
       : 0;
 
   // Navigation handlers
-  const handleNavigation = (route) => {
+  const handleNavigation = (route: string) => {
     navigate(route);
   };
 
