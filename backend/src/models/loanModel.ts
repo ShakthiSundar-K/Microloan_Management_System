@@ -316,6 +316,7 @@ const getLoanHistory = async (
         select: {
             loanId: true,
             principalAmount: true,
+            issuedAt: true,
             borrower: {
                 select: {
                     borrowerId: true,

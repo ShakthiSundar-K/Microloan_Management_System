@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -13,10 +15,10 @@ import ApiRoutes from "../utils/ApiRoutes";
 import { CustomAxiosRequestConfig } from "../service/ApiService";
 import toast from "react-hot-toast";
 
-interface Borrower {
-  borrowerId: string;
-  borrowerName: string;
-}
+// interface Borrower {
+//   borrowerId: string;
+//   borrowerName: string;
+// }
 
 interface RepaymentItem {
   borrowerId: string;
