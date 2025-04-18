@@ -335,7 +335,7 @@ const Loans: React.FC = () => {
                     {loan.daysToRepay.map((day) => (
                       <span
                         key={day}
-                        className='text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full'
+                        className='text-sm bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full'
                       >
                         {day.slice(0, 3)}
                       </span>
