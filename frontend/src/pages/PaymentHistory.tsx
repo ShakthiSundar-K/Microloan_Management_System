@@ -293,6 +293,7 @@ export default function HistoryPage() {
       {/* Banner */}
       <div className='bg-[#002866] text-white px-4 pb-6 pt-4 relative'>
         <button
+          title='Go Back'
           className='absolute left-2 top-4 flex items-center text-white'
           onClick={handleBack}
         >
@@ -432,12 +433,12 @@ export default function HistoryPage() {
                               <div className='font-medium text-gray-800'>
                                 {getBorrowerName(item)}
                               </div>
-                              <div className='text-xs text-gray-500'>
+                              {/* <div className='text-xs text-gray-500'>
                                 {new Date(date).toLocaleTimeString([], {
                                   hour: "2-digit",
                                   minute: "2-digit",
                                 })}
-                              </div>
+                              </div> */}
                             </div>
                           </div>
                           <div
@@ -466,6 +467,7 @@ export default function HistoryPage() {
                 Filter {activeTab === "repayment" ? "Repayments" : "Loans"}
               </h3>
               <button
+                title='filter close'
                 onClick={handleFilterToggle}
                 className='p-1 rounded-full hover:bg-gray-100'
               >
