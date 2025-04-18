@@ -10,6 +10,13 @@ import ForgotPassword from "./pages/ForgotPassword";
 import CollectPayment from "./pages/CollectPayment";
 import RecordPayment from "./pages/RecordPayment";
 import PaymentHistory from "./pages/PaymentHistory";
+import Loans from "./pages/Loans";
+import Borrowers from "./pages/Borrowers";
+import NewLoan from "./pages/NewLoan";
+import CashInHand from "./pages/CashInHand";
+import ExistingLoans from "./pages/ExistingLoans";
+import FinancialSummary from "./pages/FinancialSummary";
+import ClosePayments from "./pages/ClosePayments";
 
 const App = () => {
   return (
@@ -36,6 +43,13 @@ const App = () => {
               element={<RecordPayment />}
             />
             <Route path='/repayment-history' element={<PaymentHistory />} />
+            <Route path='/loans' element={<Loans />} />
+            <Route path='/borrowers' element={<Borrowers />} />
+            <Route path='/new-loan' element={<NewLoan />} />
+            <Route path='/capital' element={<CashInHand />} />
+            <Route path='/existing-loan' element={<ExistingLoans />} />
+            <Route path='/financial-summary' element={<FinancialSummary />} />
+            <Route path='close-repayments' element={<ClosePayments />} />
             {/* Add more protected routes here */}
           </Route>
         </Routes>

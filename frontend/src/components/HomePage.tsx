@@ -141,10 +141,7 @@ const HomePage = () => {
           {/* First row - Two cards side by side */}
           <div className='grid grid-cols-1 sm:grid-cols-2 gap-5'>
             {/* Today's Collection Status */}
-            <div
-              className='bg-white rounded-xl p-5 shadow-sm border border-gray-100 relative overflow-hidden cursor-pointer'
-              onClick={() => handleNavigation("/collection-status")}
-            >
+            <div className='bg-white rounded-xl p-5 shadow-sm border border-gray-100 relative overflow-hidden cursor-pointer'>
               <div className='relative z-10'>
                 <div className='flex items-center mb-3'>
                   <Clock size={18} className='text-[#670FC5] mr-2' />
@@ -181,10 +178,10 @@ const HomePage = () => {
                   </div>
                 </div>
               </div>
-              <ArrowUpRight
+              {/* <ArrowUpRight
                 size={18}
                 className='absolute bottom-3 right-3 text-gray-400'
-              />
+              /> */}
               <div className='absolute top-0 right-0 w-24 h-24 bg-purple-50 rounded-full -mt-10 -mr-10 opacity-70'></div>
             </div>
 
@@ -228,7 +225,7 @@ const HomePage = () => {
             {/* Register Existing Loans */}
             <div
               className='bg-white rounded-xl p-5 shadow-sm border border-gray-100 relative overflow-hidden cursor-pointer'
-              onClick={() => handleNavigation("/register-loan")}
+              onClick={() => handleNavigation("/existing-loan")}
             >
               <div className='relative z-10'>
                 <div className='flex items-center mb-3'>
@@ -289,7 +286,7 @@ const HomePage = () => {
             {/* Financial Reports */}
             <div
               className='bg-gradient-to-r from-[#002866] to-[#003580] rounded-xl p-6 shadow-md text-white relative overflow-hidden cursor-pointer'
-              onClick={() => handleNavigation("/reports")}
+              onClick={() => handleNavigation("/financial-summary")}
             >
               <div className='relative z-10'>
                 <div className='flex items-center mb-3'>
