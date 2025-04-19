@@ -187,7 +187,7 @@ const Loans: React.FC = () => {
 
   // Navigate to loan details
   const goToLoanDetails = (loanId: string) => {
-    navigate(`/loan/${loanId}`);
+    navigate(`/loan-details/${loanId}`);
   };
 
   return (

@@ -247,7 +247,7 @@ const getLoanDetails = async (loanId: string) => {
 
   const formatDate = (date: Date | null) => (date ? format(date, "yyyy-MM-dd") : null);
 
-  // List of all possible statuses from enum
+  // List of all enum statuses
   const statusList = [
     "Paid",
     "Unpaid",
@@ -259,17 +259,22 @@ const getLoanDetails = async (loanId: string) => {
     "Paid_Partial_Advance",
   ];
 
-  // Initialize statusDetails object with each status as key
+  // Initialize details and stats
   const statusDetails: Record<
     string,
     { dueDate: string | null; paidDate: string | null; amountPaid: number }[]
   > = {};
 
+  const repaymentStats: Record<string, number> = {
+    totalRepayments: repayments.length,
+  };
+
   for (const status of statusList) {
     statusDetails[status] = [];
+    repaymentStats[status] = 0; // Initialize each count
   }
 
-  // Group repayments by their status
+  // Process repayments
   for (const rep of repayments) {
     if (statusDetails[rep.status]) {
       statusDetails[rep.status].push({
@@ -277,16 +282,8 @@ const getLoanDetails = async (loanId: string) => {
         paidDate: formatDate(rep.paidDate),
         amountPaid: parseFloat(rep.amountPaid.toString()),
       });
+      repaymentStats[rep.status]++;
     }
-  }
-
-  // Build repayment stats dynamically
-  const repaymentStats: Record<string, number> = {
-    totalRepayments: repayments.length,
-  };
-
-  for (const status of statusList) {
-    repaymentStats[status] = statusDetails[status].length;
   }
 
   return {
@@ -295,6 +292,7 @@ const getLoanDetails = async (loanId: string) => {
     repaymentDates: statusDetails,
   };
 };
+
 
 
 const getLoanHistory = async (
