@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -21,6 +21,7 @@ import {
 import ApiRoutes from "../utils/ApiRoutes";
 import api, { CustomAxiosRequestConfig } from "../service/ApiService";
 import { toast } from "react-hot-toast";
+import { Calendar as CalendarIcon } from "lucide-react";
 
 // Define TypeScript interfaces
 interface Borrower {
@@ -87,6 +88,12 @@ const LoanDetails: React.FC = () => {
   const [showCloseModal, setShowCloseModal] = useState<boolean>(false);
   const [confirmText, setConfirmText] = useState<string>("");
   const [processingAction, setProcessingAction] = useState<boolean>(false);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [showDateDetails, setShowDateDetails] = useState<boolean>(false);
+  const [dateRepaymentInfo, setDateRepaymentInfo] =
+    useState<RepaymentDate | null>(null);
+  const [dateStatus, setDateStatus] = useState<string | null>(null);
+  const calendarRef = useRef<HTMLDivElement>(null);
 
   // All possible repayment statuses
   const repaymentStatuses = [
@@ -170,6 +177,47 @@ const LoanDetails: React.FC = () => {
       setLoading(false);
     }
   };
+
+  // Function to find repayment by date and get status
+  const findRepaymentByDate = (date: string) => {
+    let status = null;
+    let repayment = null;
+
+    // Check all statuses to find the repayment for this date
+    for (const statusKey of repaymentStatuses) {
+      const foundRepayment = repaymentDates[
+        statusKey as keyof RepaymentDates
+      ]?.find(
+        (r) =>
+          new Date(r.dueDate).toDateString() === new Date(date).toDateString()
+      );
+
+      if (foundRepayment) {
+        status = statusKey;
+        repayment = foundRepayment;
+        break;
+      }
+    }
+
+    return { status, repayment };
+  };
+
+  // Close date details popup when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        calendarRef.current &&
+        !calendarRef.current.contains(event.target as Node)
+      ) {
+        setShowDateDetails(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   // Format date
   const formatDate = (dateString: string): string => {
@@ -280,7 +328,7 @@ const LoanDetails: React.FC = () => {
 
   if (loading) {
     return (
-      <div className='flex flex-col h-full items-center justify-center pb-20'>
+      <div className='flex flex-col h-screen items-center justify-center'>
         <div className='animate-spin rounded-full h-10 w-10 border-b-2 border-[#670FC5]'></div>
         <p className='mt-4 text-gray-600'>Loading loan details...</p>
       </div>
@@ -358,34 +406,8 @@ const LoanDetails: React.FC = () => {
           </div>
 
           <div className='text-sm text-gray-600 border-t border-gray-100 pt-3'>
-            <p className='mb-1'>Address: {loan.borrower.address}</p>
-            <p>Borrower ID: {loan.borrower.borrowerId.slice(0, 8)}...</p>
+            <p>Address: {loan.borrower.address}</p>
           </div>
-        </div>
-      </div>
-
-      {/* Action Buttons */}
-      <div className='px-4 mb-4'>
-        <div className='grid grid-cols-2 gap-3'>
-          <button
-            onClick={() => setShowCloseModal(true)}
-            disabled={loan.status === "Closed" || loan.status === "Completed"}
-            className={`flex items-center justify-center gap-2 py-3 rounded-lg font-medium text-sm border ${
-              loan.status === "Closed" || loan.status === "Completed"
-                ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
-                : "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
-            }`}
-          >
-            <LockKeyhole size={18} />
-            Close Loan
-          </button>
-          <button
-            onClick={() => setShowDeleteModal(true)}
-            className='flex items-center justify-center gap-2 py-3 rounded-lg font-medium text-sm bg-red-50 text-red-700 border border-red-200 hover:bg-red-100'
-          >
-            <Trash2 size={18} />
-            Delete Loan
-          </button>
         </div>
       </div>
 
@@ -544,20 +566,32 @@ const LoanDetails: React.FC = () => {
           <div className='flex items-center justify-between mb-4'>
             <h3 className='font-medium text-gray-800'>Repayment Schedule</h3>
 
-            {/* Status filter button */}
-            <button
-              onClick={() => setShowStatusFilter(!showStatusFilter)}
-              className='flex items-center gap-1 text-sm bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-lg transition-colors'
-            >
-              <Filter size={14} />
-              <span>
-                {
-                  statusConfig[selectedStatus as keyof typeof statusConfig]
-                    .label
-                }
-              </span>
-              <ChevronDown size={14} />
-            </button>
+            <div className='flex items-center gap-2'>
+              {/* Calendar button */}
+              <button
+                onClick={() => setShowDateDetails(!showDateDetails)}
+                title='View repayment by date'
+                className='flex items-center gap-1 text-sm bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-lg transition-colors'
+              >
+                <CalendarIcon size={14} />
+                <span className='hidden sm:inline'>Check Date</span>
+              </button>
+
+              {/* Status filter button */}
+              <button
+                onClick={() => setShowStatusFilter(!showStatusFilter)}
+                className='flex items-center gap-1 text-sm bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-lg transition-colors'
+              >
+                <Filter size={14} />
+                <span>
+                  {
+                    statusConfig[selectedStatus as keyof typeof statusConfig]
+                      .label
+                  }
+                </span>
+                <ChevronDown size={14} />
+              </button>
+            </div>
           </div>
 
           {/* Repayment list */}
@@ -626,6 +660,31 @@ const LoanDetails: React.FC = () => {
               </div>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* Action Buttons */}
+      <div className='px-4 mb-4'>
+        <div className='grid grid-cols-2 gap-3'>
+          <button
+            onClick={() => setShowCloseModal(true)}
+            disabled={loan.status === "Closed" || loan.status === "Completed"}
+            className={`flex items-center justify-center gap-2 py-3 rounded-lg font-medium text-sm border ${
+              loan.status === "Closed" || loan.status === "Completed"
+                ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                : "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
+            }`}
+          >
+            <LockKeyhole size={18} />
+            Close Loan
+          </button>
+          <button
+            onClick={() => setShowDeleteModal(true)}
+            className='flex items-center justify-center gap-2 py-3 rounded-lg font-medium text-sm bg-red-50 text-red-700 border border-red-200 hover:bg-red-100'
+          >
+            <Trash2 size={18} />
+            Delete Loan
+          </button>
         </div>
       </div>
 
@@ -831,6 +890,143 @@ const LoanDetails: React.FC = () => {
                   ) : (
                     "Delete Loan"
                   )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Date Details Modal */}
+      {/* Date Details Modal */}
+      {showDateDetails && (
+        <div className='fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center px-4 pb-8'>
+          <div
+            ref={calendarRef}
+            className='bg-white rounded-xl w-full max-w-sm overflow-hidden shadow-xl animate-fade-in'
+          >
+            <div className='px-4 py-3 border-b border-gray-200 flex items-center justify-between'>
+              <h3 className='font-medium text-lg'>Check Repayment Date</h3>
+              <button
+                title='Close'
+                onClick={() => setShowDateDetails(false)}
+                className='p-1 rounded-full hover:bg-gray-100'
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className='p-4'>
+              <p className='text-sm text-gray-600 mb-4'>
+                Select a date to view repayment information
+              </p>
+
+              <input
+                title='Select a date'
+                type='date'
+                onChange={(e) => {
+                  const { status, repayment } = findRepaymentByDate(
+                    e.target.value
+                  );
+                  setSelectedDate(e.target.value);
+                  setDateStatus(status);
+                  setDateRepaymentInfo(repayment);
+                }}
+                className='w-full px-3 py-2 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-[#670FC5] focus:border-transparent'
+              />
+
+              {selectedDate && dateRepaymentInfo ? (
+                <div className='mt-4 border border-gray-200 rounded-lg p-4'>
+                  <div className='flex items-center gap-3 mb-3'>
+                    {dateStatus &&
+                      statusConfig[dateStatus as keyof typeof statusConfig] && (
+                        <div
+                          className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                            statusConfig[
+                              dateStatus as keyof typeof statusConfig
+                            ].color
+                          }`}
+                        >
+                          {
+                            statusConfig[
+                              dateStatus as keyof typeof statusConfig
+                            ].icon
+                          }
+                        </div>
+                      )}
+                    <div>
+                      <p className='font-medium'>
+                        {dateStatus &&
+                        statusConfig[dateStatus as keyof typeof statusConfig]
+                          ? statusConfig[
+                              dateStatus as keyof typeof statusConfig
+                            ].label
+                          : "Unknown Status"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className='space-y-2 text-sm'>
+                    <div className='flex justify-between'>
+                      <span className='text-gray-600'>Due Date:</span>
+                      <span className='font-medium'>
+                        {formatDate(dateRepaymentInfo.dueDate)}
+                      </span>
+                    </div>
+
+                    {dateRepaymentInfo.paidDate && (
+                      <div className='flex justify-between'>
+                        <span className='text-gray-600'>Paid Date:</span>
+                        <span className='font-medium'>
+                          {formatDate(dateRepaymentInfo.paidDate)}
+                        </span>
+                      </div>
+                    )}
+
+                    <div className='flex justify-between'>
+                      <span className='text-gray-600'>Amount Due:</span>
+                      <span className='font-medium'>
+                        {formatCurrency("450")}
+                      </span>
+                    </div>
+
+                    <div className='flex justify-between'>
+                      <span className='text-gray-600'>Amount Paid:</span>
+                      <span
+                        className={`font-medium ${
+                          dateRepaymentInfo.amountPaid > 0 ? "" : "text-red-600"
+                        }`}
+                      >
+                        {dateRepaymentInfo.amountPaid > 0
+                          ? formatCurrency(String(dateRepaymentInfo.amountPaid))
+                          : "₹0"}
+                      </span>
+                    </div>
+
+                    {dateStatus &&
+                      [
+                        "Paid_Partial",
+                        "Paid_Partial_Late",
+                        "Paid_Partial_Advance",
+                      ].includes(dateStatus) && (
+                        <div className='mt-1 px-2 py-1 bg-yellow-50 rounded text-yellow-700 text-xs'>
+                          Partial payment made
+                        </div>
+                      )}
+                  </div>
+                </div>
+              ) : selectedDate ? (
+                <div className='flex flex-col items-center justify-center py-6 text-gray-500'>
+                  <AlertCircle size={24} className='mb-2' />
+                  <p>No repayment found for this date</p>
+                </div>
+              ) : null}
+
+              <div className='mt-4'>
+                <button
+                  onClick={() => setShowDateDetails(false)}
+                  className='w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg transition-colors'
+                >
+                  Close
                 </button>
               </div>
             </div>
