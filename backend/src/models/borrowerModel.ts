@@ -145,6 +145,9 @@ const getBorrowerDetails = async (borrowerId: string) => {
           missed: repaymentCounts.find((r) => r.status === "Missed")?._count || 0,
           paidLate: repaymentCounts.find((r) => r.status === "Paid_Late")?._count || 0,
           paidInAdvance: repaymentCounts.find((r) => r.status === "Paid_in_Advance")?._count || 0,
+          paidPartialLate: repaymentCounts.find((r) => r.status === "Paid_Partial_Late")?._count || 0,
+          paidPartialAdvance: repaymentCounts.find((r) => r.status === "Paid_Partial_Advance")?._count || 0,
+          paidPartial: repaymentCounts.find((r) => r.status === "Paid_Partial")?._count || 0,
         },
       };
     })
