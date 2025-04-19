@@ -222,7 +222,6 @@ const getLoanDetails = async (loanId: string) => {
       status: true,
       dueDate: true,
       daysToRepay: true,
-      dailyRepaymentAmount: true,
       borrower: {
         select: {
           borrowerId: true,
@@ -234,9 +233,7 @@ const getLoanDetails = async (loanId: string) => {
     },
   });
 
-  if (!loan) {
-    throw new Error("Loan not found");
-  }
+  if (!loan) throw new Error("Loan not found");
 
   const repayments = await prisma.repayments.findMany({
     where: { loanId },
@@ -244,65 +241,53 @@ const getLoanDetails = async (loanId: string) => {
       dueDate: true,
       paidDate: true,
       status: true,
-      isPending: true,
       amountPaid: true,
     },
   });
 
   const formatDate = (date: Date | null) => (date ? format(date, "yyyy-MM-dd") : null);
 
-  // Object to store categorized dueDate + paidDate + amountPaid
+  // List of all possible statuses from enum
+  const statusList = [
+    "Paid",
+    "Unpaid",
+    "Missed",
+    "Paid_Late",
+    "Paid_in_Advance",
+    "Paid_Partial",
+    "Paid_Partial_Late",
+    "Paid_Partial_Advance",
+  ];
+
+  // Initialize statusDetails object with each status as key
   const statusDetails: Record<
     string,
     { dueDate: string | null; paidDate: string | null; amountPaid: number }[]
-  > = {
-    Paid: [],
-    Unpaid: [],
-    Missed: [],
-    Paid_Late: [],
-    Paid_in_Advance: [],
-    Partially_Paid: [],
-  };
+  > = {};
 
-  const partiallyPaidDates = new Set<string>();
-
-  // Step 1: Populate Partially_Paid first
-  for (const rep of repayments) {
-    const dueDateStr = formatDate(rep.dueDate);
-    if (rep.status === "Missed" && rep.isPending) {
-      statusDetails["Partially_Paid"].push({
-        dueDate: dueDateStr,
-        paidDate: formatDate(rep.paidDate),
-        amountPaid: parseFloat(rep.amountPaid.toString()),
-      });
-      if (dueDateStr) partiallyPaidDates.add(dueDateStr);
-    }
+  for (const status of statusList) {
+    statusDetails[status] = [];
   }
 
-  // Step 2: Add other status entries, skip ones in partiallyPaid
+  // Group repayments by their status
   for (const rep of repayments) {
-    const dueDateStr = formatDate(rep.dueDate);
-    if (dueDateStr && partiallyPaidDates.has(dueDateStr)) continue;
-
     if (statusDetails[rep.status]) {
       statusDetails[rep.status].push({
-        dueDate: dueDateStr,
+        dueDate: formatDate(rep.dueDate),
         paidDate: formatDate(rep.paidDate),
         amountPaid: parseFloat(rep.amountPaid.toString()),
       });
     }
   }
 
-  // Step 3: Stats
-  const repaymentStats = {
+  // Build repayment stats dynamically
+  const repaymentStats: Record<string, number> = {
     totalRepayments: repayments.length,
-    paid: statusDetails["Paid"].length,
-    unpaid: statusDetails["Unpaid"].length,
-    missed: statusDetails["Missed"].length,
-    paidLate: statusDetails["Paid_Late"].length,
-    paidInAdvance: statusDetails["Paid_in_Advance"].length,
-    partiallyPaid: statusDetails["Partially_Paid"].length,
   };
+
+  for (const status of statusList) {
+    repaymentStats[status] = statusDetails[status].length;
+  }
 
   return {
     loan,
