@@ -525,6 +525,7 @@ export default function HistoryPage() {
                         Start Date
                       </label>
                       <input
+                        title='start date'
                         type='date'
                         value={filterOptions.startDate}
                         onChange={(e) =>
@@ -538,6 +539,7 @@ export default function HistoryPage() {
                         End Date
                       </label>
                       <input
+                        title='end date'
                         type='date'
                         value={filterOptions.endDate}
                         onChange={(e) =>

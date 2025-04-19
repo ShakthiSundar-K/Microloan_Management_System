@@ -188,6 +188,7 @@ const RecordPayment = () => {
                 </span>
                 {isEditing ? (
                   <input
+                    title='Enter amount to pay'
                     type='number'
                     value={paymentAmount}
                     onChange={handleAmountChange}
