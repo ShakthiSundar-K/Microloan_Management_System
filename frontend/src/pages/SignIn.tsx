@@ -30,9 +30,11 @@ const SignIn = () => {
     setIsLoading(true);
 
     try {
+      // console.log("Form data before API call:", formData); // Debugging line
       const response = (await api.post(ApiRoutes.login.path, formData, {
         authenticate: ApiRoutes.login.authenticate,
       } as CustomAxiosRequestConfig)) as AuthResponse;
+      // console.log("API response:", response); // Debugging line
       toast.success("Login successful!");
       localStorage.setItem("token", response.token);
       navigate("/");

@@ -8,7 +8,6 @@ import {
   Lock,
   Shield,
   Mail,
-  Phone,
   User,
 } from "lucide-react";
 import LoadingSpinner from "../components/LoadingSpinner";

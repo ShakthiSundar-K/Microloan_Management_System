@@ -231,6 +231,7 @@ const Loans: React.FC = () => {
             />
           </div>
           <button
+            title='Filter'
             onClick={handleFilterToggle}
             className='p-2.5 bg-[#670FC5] text-white rounded-lg flex items-center justify-center shadow-sm hover:bg-[#5a0cb0] transition-colors'
           >
@@ -378,6 +379,7 @@ const Loans: React.FC = () => {
                   Loan Status
                 </label>
                 <select
+                  title='Loan Status'
                   value={filterOptions.status}
                   onChange={(e) => handleFilterChange("status", e.target.value)}
                   className='w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#670FC5] focus:border-[#670FC5]'
@@ -489,6 +491,7 @@ const Loans: React.FC = () => {
                   Due Before Date
                 </label>
                 <input
+                  title='Due Date'
                   type='date'
                   value={filterOptions.dueDate}
                   onChange={(e) =>
