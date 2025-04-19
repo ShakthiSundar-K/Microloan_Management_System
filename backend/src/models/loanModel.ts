@@ -1,4 +1,5 @@
 import prisma from "../config/prismaClient";
+import { format } from "date-fns";
 
 const issueLoan = async (borrowerId: string, issuedById: string, data: any) => {
     await prisma.$transaction(async (tx) => {
@@ -211,52 +212,103 @@ const getFilteredLoans = async (filters: any) => {
 };
 
 const getLoanDetails = async (loanId: string) => {
-    // Fetch loan details with borrower
-    const loan = await prisma.loans.findUnique({
-        where: { loanId },
+  const loan = await prisma.loans.findUnique({
+    where: { loanId },
+    select: {
+      loanId: true,
+      principalAmount: true,
+      pendingAmount: true,
+      issuedAt: true,
+      status: true,
+      dueDate: true,
+      daysToRepay: true,
+      dailyRepaymentAmount: true,
+      borrower: {
         select: {
-            loanId: true,
-            principalAmount: true,
-            pendingAmount: true,
-            issuedAt: true,
-            status: true,
-            dueDate: true,
-            daysToRepay: true,
-            borrower: {
-                select: {
-                    borrowerId: true,
-                    name: true,
-                    phoneNumber: true,
-                    address: true,
-                },
-            },
+          borrowerId: true,
+          name: true,
+          phoneNumber: true,
+          address: true,
         },
-    });
+      },
+    },
+  });
 
-    if (!loan) {
-        throw new Error("Loan not found");
+  if (!loan) {
+    throw new Error("Loan not found");
+  }
+
+  const repayments = await prisma.repayments.findMany({
+    where: { loanId },
+    select: {
+      dueDate: true,
+      paidDate: true,
+      status: true,
+      isPending: true,
+      amountPaid: true,
+    },
+  });
+
+  const formatDate = (date: Date | null) => (date ? format(date, "yyyy-MM-dd") : null);
+
+  // Object to store categorized dueDate + paidDate + amountPaid
+  const statusDetails: Record<
+    string,
+    { dueDate: string | null; paidDate: string | null; amountPaid: number }[]
+  > = {
+    Paid: [],
+    Unpaid: [],
+    Missed: [],
+    Paid_Late: [],
+    Paid_in_Advance: [],
+    Partially_Paid: [],
+  };
+
+  const partiallyPaidDates = new Set<string>();
+
+  // Step 1: Populate Partially_Paid first
+  for (const rep of repayments) {
+    const dueDateStr = formatDate(rep.dueDate);
+    if (rep.status === "Missed" && rep.isPending) {
+      statusDetails["Partially_Paid"].push({
+        dueDate: dueDateStr,
+        paidDate: formatDate(rep.paidDate),
+        amountPaid: parseFloat(rep.amountPaid.toString()),
+      });
+      if (dueDateStr) partiallyPaidDates.add(dueDateStr);
     }
+  }
 
-    // Get repayment breakdown for the loan
-    const repaymentCounts = await prisma.repayments.groupBy({
-        by: ["status"],
-        where: { loanId },
-        _count: true,
-    });
+  // Step 2: Add other status entries, skip ones in partiallyPaid
+  for (const rep of repayments) {
+    const dueDateStr = formatDate(rep.dueDate);
+    if (dueDateStr && partiallyPaidDates.has(dueDateStr)) continue;
 
-    const repaymentStats = {
-        totalRepayments: repaymentCounts.reduce((sum, rep) => sum + rep._count, 0),
-        paid: repaymentCounts.find((r) => r.status === "Paid")?._count || 0,
-        unpaid: repaymentCounts.find((r) => r.status === "Unpaid")?._count || 0,
-        missed: repaymentCounts.find((r) => r.status === "Missed")?._count || 0,
-        paidLate: repaymentCounts.find((r) => r.status === "Paid_Late")?._count || 0,
-        paidInAdvance: repaymentCounts.find((r) => r.status === "Paid_in_Advance")?._count || 0,
-    };
+    if (statusDetails[rep.status]) {
+      statusDetails[rep.status].push({
+        dueDate: dueDateStr,
+        paidDate: formatDate(rep.paidDate),
+        amountPaid: parseFloat(rep.amountPaid.toString()),
+      });
+    }
+  }
 
-    return {
-        loan,
-        repaymentStats,
-    };
+  // Step 3: Stats
+  const repaymentStats = {
+    totalRepayments: repayments.length,
+    paid: statusDetails["Paid"].length,
+    unpaid: statusDetails["Unpaid"].length,
+    missed: statusDetails["Missed"].length,
+    paidLate: statusDetails["Paid_Late"].length,
+    paidInAdvance: statusDetails["Paid_in_Advance"].length,
+    partiallyPaid: statusDetails["Partially_Paid"].length,
+  };
+
+  return {
+    loan,
+    repaymentStats,
+    repaymentDates: statusDetails,
+  };
 };
 
 

@@ -111,6 +111,8 @@ enum RepaymentStatus {
   Missed // Repayment was missed
   Paid_Late // Repayment was made after the due date
   Paid_in_Advance // Repayment was made before the due date
+  Paid_Partial_Late // Partial repayment was made
+  Paid_Partial_Advance // Partial repayment was made in advance
   Paid_Partial // Partial repayment was made
 }
 

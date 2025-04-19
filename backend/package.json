@@ -6,7 +6,6 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon --exec ts-node --transpile-only src/index.ts",
     "start": "ts-node --transpile-only src/index.ts"
-
   },
   "keywords": [],
   "author": "",
@@ -31,6 +30,7 @@
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
+    "@types/date-fns": "^2.6.3",
     "@types/express": "^5.0.1",
     "@types/jsonwebtoken": "^9.0.9",
     "@types/morgan": "^1.9.9",
