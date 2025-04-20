@@ -19,6 +19,27 @@ import ApiRoutes from "../utils/ApiRoutes";
 import { CustomAxiosRequestConfig } from "../service/ApiService";
 import toast from "react-hot-toast";
 
+interface CollectionStatus {
+  amountCollectedToday: string;
+  amountSupposedToBeCollectedToday: string;
+}
+
+interface getCollectionStatusResponse {
+  message: string;
+  data: CollectionStatus;
+}
+
+interface Capital {
+  idleCapital: string;
+  totalCapital: string;
+  pendingLoanAmount: string;
+}
+
+interface getCapitalResponse {
+  message: string;
+  data: Capital;
+}
+
 const HomePage = () => {
   const navigate = useNavigate();
   const [collectionStatus, setCollectionStatus] = useState({
@@ -38,7 +59,7 @@ const HomePage = () => {
       setIsLoading(true);
       try {
         // Fetch collection status
-        const collectionResponse = await api.get(
+        const collectionResponse = await api.get<getCollectionStatusResponse>(
           ApiRoutes.todayCollectionStatus.path,
           {
             authenticate: ApiRoutes.todayCollectionStatus.authenticate,
@@ -55,7 +76,7 @@ const HomePage = () => {
         // Fetch capital data
         const path = ApiRoutes.getLatestCapital.path.replace(":userId", userId);
 
-        const capitalResponse = await api.get(path, {
+        const capitalResponse = await api.get<getCapitalResponse>(path, {
           authenticate: ApiRoutes.getLatestCapital.authenticate,
         } as CustomAxiosRequestConfig);
 

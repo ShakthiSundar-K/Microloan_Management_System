@@ -34,6 +34,11 @@ interface Loan {
   borrower: Borrower;
 }
 
+interface getAllLoansResponse {
+  message: string;
+  data: Loan[];
+}
+
 interface FilterOptions {
   status: string;
   minPrincipalAmt: string;
@@ -82,10 +87,13 @@ const Loans: React.FC = () => {
   const fetchLoans = async (filters = {}) => {
     setLoading(true);
     try {
-      const response = await api.get(ApiRoutes.filterLoans.path, {
-        params: filters,
-        authenticate: ApiRoutes.filterLoans.authenticate,
-      } as CustomAxiosRequestConfig);
+      const response = await api.get<getAllLoansResponse>(
+        ApiRoutes.filterLoans.path,
+        {
+          params: filters,
+          authenticate: ApiRoutes.filterLoans.authenticate,
+        } as CustomAxiosRequestConfig
+      );
 
       setLoans(response.data);
       setLoading(false);

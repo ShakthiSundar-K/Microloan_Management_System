@@ -4,6 +4,15 @@ import api from "../service/ApiService";
 import ApiRoutes from "../utils/ApiRoutes";
 import { CustomAxiosRequestConfig } from "../service/ApiService";
 
+interface Capital {
+  totalCapital: number;
+}
+
+interface getCapitalResponse {
+  message: string;
+  data: Capital;
+}
+
 const TopNavigation = () => {
   const [balance, setBalance] = useState<number>(0);
 
@@ -17,7 +26,7 @@ const TopNavigation = () => {
           return;
         }
         const path = ApiRoutes.getLatestCapital.path.replace(":userId", userId);
-        const response = await api.get(path, {
+        const response = await api.get<getCapitalResponse>(path, {
           authenticate: ApiRoutes.getLatestCapital.authenticate,
         } as CustomAxiosRequestConfig);
         // console.log("Balance response:", response.data);

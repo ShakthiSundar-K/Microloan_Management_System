@@ -77,6 +77,11 @@ interface LoanDetails {
   repaymentDates: RepaymentDates;
 }
 
+interface getLoanDetailsResponse {
+  message: string;
+  data: LoanDetails;
+}
+
 const LoanDetails: React.FC = () => {
   const navigate = useNavigate();
   const { loanId } = useParams<{ loanId: string }>();
@@ -162,7 +167,7 @@ const LoanDetails: React.FC = () => {
   const fetchLoanDetails = async (id: string) => {
     setLoading(true);
     try {
-      const response = await api.get(
+      const response = await api.get<getLoanDetailsResponse>(
         ApiRoutes.getLoanDetails.path.replace(":loanId", id),
         {
           authenticate: ApiRoutes.getLoanDetails.authenticate,

@@ -43,6 +43,11 @@ interface GroupedHistory {
   [date: string]: (RepaymentItem | LoanItem)[];
 }
 
+interface getRepaymentHistoryResponse {
+  message: string;
+  data: GroupedHistory;
+}
+
 type FilterType = "24h" | "week" | "month" | "custom";
 
 interface FilterOptions {
@@ -105,9 +110,12 @@ export default function HistoryPage() {
 
       console.log(`Fetching from: ${endpoint}?${params.toString()}`);
 
-      const response = await api.get(`${endpoint}?${params.toString()}`, {
-        authenticate: auth,
-      } as CustomAxiosRequestConfig);
+      const response = await api.get<getRepaymentHistoryResponse>(
+        `${endpoint}?${params.toString()}`,
+        {
+          authenticate: auth,
+        } as CustomAxiosRequestConfig
+      );
 
       console.log(`${activeTab} History Response:`, response.data);
 
@@ -118,7 +126,14 @@ export default function HistoryPage() {
         } else {
           // For loan history, process the data
           const loanData = response.data.data || response.data;
-          setHistory(processLoanHistory(loanData));
+          setHistory(
+            processLoanHistory(
+              loanData.filter(
+                (item): item is LoanItem =>
+                  "loanId" in item && "principalAmount" in item
+              )
+            )
+          );
         }
 
         // Calculate total amount and total items
@@ -135,10 +150,15 @@ export default function HistoryPage() {
         } else {
           // For loan history
           const loanData = response.data.data || response.data;
-          loanData.forEach((item: LoanItem) => {
-            total += Number(item.principalAmount);
-            count += 1;
-          });
+          loanData
+            .filter(
+              (item): item is LoanItem =>
+                "loanId" in item && "principalAmount" in item
+            )
+            .forEach((item: LoanItem) => {
+              total += Number(item.principalAmount);
+              count += 1;
+            });
         }
 
         setTotalAmount(total);

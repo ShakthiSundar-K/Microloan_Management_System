@@ -27,6 +27,11 @@ interface Repayment {
   borrower: Borrower;
 }
 
+interface GetTodayRepaymentsResponse {
+  message: string;
+  data: Repayment[];
+}
+
 export default function CollectPayment() {
   const [searchTerm, setSearchTerm] = useState("");
   const [repayments, setRepayments] = useState<Repayment[]>([]);
@@ -39,9 +44,12 @@ export default function CollectPayment() {
 
   const getRepayments = async (search: string = "") => {
     try {
-      const response = await api.get(ApiRoutes.todayRepayments.path, {
-        authenticate: ApiRoutes.todayRepayments.authenticate,
-      } as CustomAxiosRequestConfig);
+      const response = await api.get<GetTodayRepaymentsResponse>(
+        ApiRoutes.todayRepayments.path,
+        {
+          authenticate: ApiRoutes.todayRepayments.authenticate,
+        } as CustomAxiosRequestConfig
+      );
 
       const filtered = response.data.filter((repayment: Repayment) =>
         repayment.borrower.name.toLowerCase().includes(search.toLowerCase())
