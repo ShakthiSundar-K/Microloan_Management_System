@@ -37,13 +37,7 @@ interface Borrower {
 
 interface GetBorrowersResponse {
   message: string;
-  data: {
-    borrowers: Borrower[];
-    loanStats: LoanStats;
-    activeLoans: ActiveLoan[];
-    closedLoans: ActiveLoan[];
-    defaultedLoans: ActiveLoan[];
-  };
+  data: BorrowerDetails;
 }
 
 interface RepaymentStats {
@@ -151,8 +145,10 @@ const BorrowerDetails: React.FC = () => {
         } as CustomAxiosRequestConfig
       );
       console.log(response.data);
-      setBorrowerDetails(response.data);
-      setFilteredLoans(response.data.activeLoans);
+      setBorrowerDetails((response as unknown as GetBorrowersResponse).data);
+      setFilteredLoans(
+        (response as unknown as GetBorrowersResponse).data.activeLoans
+      );
       setLoading(false);
       toast.success("Borrower details fetched successfully");
     } catch {
@@ -256,16 +252,22 @@ const BorrowerDetails: React.FC = () => {
 
   // Calculate loan progress percentage
   const calculateProgress = (loan: ActiveLoan): number => {
+    if (!loan || !loan.repaymentStats) {
+      return 0;
+    }
+
     const { repaymentStats } = loan;
     const totalPaid =
-      repaymentStats.paid +
-      repaymentStats.paidLate +
-      repaymentStats.paidInAdvance +
-      repaymentStats.paidPartial +
-      repaymentStats.paidPartialLate +
-      repaymentStats.paidPartialAdvance;
+      (repaymentStats.paid || 0) +
+      (repaymentStats.paidLate || 0) +
+      (repaymentStats.paidInAdvance || 0) +
+      (repaymentStats.paidPartial || 0) +
+      (repaymentStats.paidPartialLate || 0) +
+      (repaymentStats.paidPartialAdvance || 0);
 
-    return Math.round((totalPaid / repaymentStats.totalRepayments) * 100);
+    return repaymentStats.totalRepayments > 0
+      ? Math.round((totalPaid / repaymentStats.totalRepayments) * 100)
+      : 0;
   };
 
   // Handle status filter selection
@@ -723,19 +725,19 @@ const BorrowerDetails: React.FC = () => {
                         <div className='flex items-center'>
                           <div className='w-2 h-2 rounded-full bg-green-500 mr-1'></div>
                           <span className='text-gray-600'>
-                            {loan.repaymentStats.paid} paid
+                            {loan.repaymentStats?.paid ?? 0} paid
                           </span>
                         </div>
                         <div className='flex items-center'>
                           <div className='w-2 h-2 rounded-full bg-yellow-500 mr-1'></div>
                           <span className='text-gray-600'>
-                            {loan.repaymentStats.unpaid} unpaid
+                            {loan.repaymentStats?.unpaid ?? 0} unpaid
                           </span>
                         </div>
                         <div className='flex items-center'>
                           <div className='w-2 h-2 rounded-full bg-red-500 mr-1'></div>
                           <span className='text-gray-600'>
-                            {loan.repaymentStats.missed} missed
+                            {loan.repaymentStats?.missed ?? 0} missed
                           </span>
                         </div>
                       </div>
