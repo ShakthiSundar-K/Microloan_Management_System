@@ -19,6 +19,8 @@ import FinancialSummary from "./pages/FinancialSummary";
 import ClosePayments from "./pages/ClosePayments";
 import LoanDetails from "./pages/LoanDetails";
 import BorrowerDetails from "./pages/BorrowerDetails";
+import CreateBorrower from "./pages/CreateBorrower";
+import CreateLoan from "./pages/CreateLoan";
 
 const App = () => {
   return (
@@ -48,6 +50,8 @@ const App = () => {
             <Route path='/loans' element={<Loans />} />
             <Route path='/borrowers' element={<Borrowers />} />
             <Route path='/new-loan' element={<NewLoan />} />
+            <Route path='/create-borrower' element={<CreateBorrower />} />
+            <Route path='/create-loan/:borrowerId' element={<CreateLoan />} />
             <Route path='/capital' element={<CashInHand />} />
             <Route path='/existing-loan' element={<ExistingLoans />} />
             <Route path='/financial-summary' element={<FinancialSummary />} />

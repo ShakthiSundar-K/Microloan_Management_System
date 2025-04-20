@@ -1044,6 +1044,7 @@ const BorrowerDetails: React.FC = () => {
                 Risk Assessment
               </h3>
               <button
+                title='Close'
                 onClick={() => setShowRiskModal(false)}
                 className='text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100'
               >
