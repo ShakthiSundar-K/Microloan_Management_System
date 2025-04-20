@@ -2,6 +2,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
+  RefreshCw,
+  Shield,
   ArrowLeft,
   UserRound,
   Wallet,
@@ -75,6 +77,28 @@ interface BorrowerDetails {
   defaultedLoans: ActiveLoan[];
 }
 
+interface RiskAssessment {
+  id: string;
+  borrowerId: string;
+  totalLoansTaken: number;
+  totalRepayments: number;
+  missedRepayments: number;
+  latePayments: number;
+  defaultedLoans: number;
+  completedLoans: number;
+  onTimePayments: number;
+  repaymentRate: number;
+  averageDelayInDays: number;
+  riskScore: number;
+  riskLevel: string;
+  lastEvaluatedAt: string;
+}
+
+interface getRiskAssessmentResponse {
+  message: string;
+  data: RiskAssessment;
+}
+
 const BorrowerDetails: React.FC = () => {
   const navigate = useNavigate();
   const { borrowerId } = useParams<{ borrowerId: string }>();
@@ -94,11 +118,17 @@ const BorrowerDetails: React.FC = () => {
     useState<boolean>(false);
   const [confirmationText, setConfirmationText] = useState("");
   const filterRef = useRef<HTMLDivElement>(null);
+  const [riskAssessment, setRiskAssessment] = useState<RiskAssessment | null>(
+    null
+  );
+  const [showRiskModal, setShowRiskModal] = useState<boolean>(false);
+  const [isRefreshingRisk, setIsRefreshingRisk] = useState<boolean>(false);
 
   // Fetch borrower details on component mount
   useEffect(() => {
     if (borrowerId) {
       fetchBorrowerDetails(borrowerId);
+      fetchRiskAssessment();
     }
   }, [borrowerId]);
 
@@ -154,6 +184,50 @@ const BorrowerDetails: React.FC = () => {
     } catch {
       toast.error("Failed to fetch borrower details");
       setLoading(false);
+    }
+  };
+
+  // Add this function with your other functions
+  const fetchRiskAssessment = async () => {
+    if (!borrowerId) return;
+
+    try {
+      const response = await api.get<getRiskAssessmentResponse>(
+        ApiRoutes.getRiskAssessment.path.replace(":borrowerId", borrowerId),
+        {
+          authenticate: ApiRoutes.getRiskAssessment.authenticate,
+        } as CustomAxiosRequestConfig
+      );
+
+      setRiskAssessment(response.data);
+    } catch (error) {
+      console.error("Failed to fetch risk assessment:", error);
+    }
+  };
+
+  // Function to manually trigger risk assessment
+  const triggerRiskAssessment = async () => {
+    if (!borrowerId) return;
+
+    setIsRefreshingRisk(true);
+    try {
+      await api.post(
+        ApiRoutes.manualRiskAssessmentTrigger.path.replace(
+          ":borrowerId",
+          borrowerId
+        ),
+        {},
+        {
+          authenticate: ApiRoutes.manualRiskAssessmentTrigger.authenticate,
+        } as CustomAxiosRequestConfig
+      );
+
+      toast.success("Risk assessment updated successfully");
+      fetchRiskAssessment(); // Fetch the updated risk assessment
+    } catch {
+      toast.error("Failed to update risk assessment");
+    } finally {
+      setIsRefreshingRisk(false);
     }
   };
 
@@ -231,6 +305,12 @@ const BorrowerDetails: React.FC = () => {
     setFilteredLoans(filtered);
   };
 
+  const getRiskScoreColor = (score: number): string => {
+    if (score >= 80) return "bg-gradient-to-r from-green-400 to-green-600";
+    if (score >= 60) return "bg-gradient-to-r from-yellow-400 to-yellow-600";
+    return "bg-gradient-to-r from-red-400 to-red-600";
+  };
+
   // Format date
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
@@ -239,6 +319,12 @@ const BorrowerDetails: React.FC = () => {
       month: "short",
       day: "numeric",
     });
+  };
+
+  const getRiskScoreTextColor = (score: number): string => {
+    if (score >= 80) return "text-green-600";
+    if (score >= 60) return "text-yellow-600";
+    return "text-red-600";
   };
 
   // Format currency
@@ -283,6 +369,46 @@ const BorrowerDetails: React.FC = () => {
     setPendingMinFilter("");
     setPendingMaxFilter("");
     setSelectedLoanStatus("Active");
+  };
+
+  // Helper functions to format and style risk levels
+  const formatRiskLevel = (riskLevel: string | undefined): string => {
+    if (!riskLevel) return "Unknown";
+
+    // Convert from snake_case to readable format
+    return riskLevel
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+  };
+
+  const getRiskLevelColor = (riskLevel: string | undefined): string => {
+    if (!riskLevel) return "text-gray-400";
+
+    switch (riskLevel) {
+      case "Low_Risk":
+        return "text-green-500";
+      case "Medium_Risk":
+        return "text-yellow-500";
+      case "High_Risk":
+        return "text-red-500";
+      default:
+        return "text-gray-400";
+    }
+  };
+
+  const getRiskLevelTextColor = (riskLevel: string | undefined): string => {
+    if (!riskLevel) return "text-gray-600";
+
+    switch (riskLevel) {
+      case "Low_Risk":
+        return "text-green-700";
+      case "Medium_Risk":
+        return "text-yellow-700";
+      case "High_Risk":
+        return "text-red-700";
+      default:
+        return "text-gray-600";
+    }
   };
 
   // Get appropriate status badge color
@@ -396,6 +522,47 @@ const BorrowerDetails: React.FC = () => {
             <div className='flex items-center gap-2'>
               <Calendar size={14} className='text-gray-400' />
               <span>Joined on {formatDate(borrower.createdAt)}</span>
+            </div>
+            <div className='flex items-center gap-2'>
+              <Shield
+                size={14}
+                className={`${getRiskLevelColor(riskAssessment?.riskLevel)}`}
+              />
+              <div className='flex items-center gap-1'>
+                <span>
+                  Risk Level:{" "}
+                  <span
+                    className={`font-medium ${getRiskLevelTextColor(
+                      riskAssessment?.riskLevel
+                    )}`}
+                  >
+                    {formatRiskLevel(riskAssessment?.riskLevel)}
+                  </span>
+                </span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowRiskModal(true);
+                  }}
+                  className='text-gray-500 hover:text-gray-700'
+                  title='Risk Details'
+                >
+                  <Info size={14} />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    triggerRiskAssessment();
+                  }}
+                  className={`text-gray-500 hover:text-gray-700 ${
+                    isRefreshingRisk ? "animate-spin" : ""
+                  }`}
+                  title='Refresh Risk Assessment'
+                  disabled={isRefreshingRisk}
+                >
+                  <RefreshCw size={14} />
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -863,6 +1030,136 @@ const BorrowerDetails: React.FC = () => {
               >
                 Delete
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Risk Assessment Modal - Compact Version */}
+      {showRiskModal && riskAssessment && (
+        <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4'>
+          <div className='bg-white rounded-lg shadow-lg p-4 w-full max-w-sm max-h-[80vh] overflow-y-auto'>
+            <div className='flex justify-between items-center mb-3'>
+              <h3 className='text-base font-medium text-gray-900'>
+                Risk Assessment
+              </h3>
+              <button
+                onClick={() => setShowRiskModal(false)}
+                className='text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100'
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Risk Score with Visual Indicator */}
+            <div className='bg-gray-50 rounded-lg p-3 mb-3'>
+              <div className='flex items-center justify-between mb-1.5'>
+                <span className='text-sm text-gray-600'>Risk Score</span>
+                <div className='flex items-center'>
+                  <span
+                    className={`text-lg font-bold ${getRiskScoreTextColor(
+                      riskAssessment.riskScore
+                    )}`}
+                  >
+                    {riskAssessment.riskScore}
+                  </span>
+                  <span className='text-xs text-gray-500 ml-1'>/100</span>
+                </div>
+              </div>
+              <div className='w-full bg-gray-200 rounded-full h-1.5'>
+                <div
+                  className={`h-1.5 rounded-full ${getRiskScoreColor(
+                    riskAssessment.riskScore
+                  )}`}
+                  style={{ width: `${riskAssessment.riskScore}%` }}
+                ></div>
+              </div>
+              <div className='mt-1 flex justify-between text-xs text-gray-500'>
+                <span>High Risk</span>
+                <span>Medium</span>
+                <span>Low Risk</span>
+              </div>
+            </div>
+
+            {/* Key Metrics */}
+            <div className='grid grid-cols-2 gap-2 mb-3'>
+              <div className='bg-green-50 p-2 rounded-md'>
+                <p className='text-xs text-gray-500'>On-Time Payments</p>
+                <p className='font-semibold text-green-700'>
+                  {riskAssessment.onTimePayments}
+                </p>
+              </div>
+              <div className='bg-red-50 p-2 rounded-md'>
+                <p className='text-xs text-gray-500'>Missed/Late</p>
+                <p className='font-semibold text-red-700'>
+                  {riskAssessment.missedRepayments +
+                    riskAssessment.latePayments}
+                </p>
+              </div>
+              <div className='bg-blue-50 p-2 rounded-md'>
+                <p className='text-xs text-gray-500'>Repayment Rate</p>
+                <p className='font-semibold text-blue-700'>
+                  {riskAssessment.repaymentRate}%
+                </p>
+              </div>
+              <div className='bg-yellow-50 p-2 rounded-md'>
+                <p className='text-xs text-gray-500'>Avg. Delay</p>
+                <p className='font-semibold text-yellow-700'>
+                  {riskAssessment.averageDelayInDays} days
+                </p>
+              </div>
+            </div>
+
+            {/* Detailed Metrics Table */}
+            <div className='text-xs border rounded-md mb-3 overflow-hidden'>
+              <div className='grid grid-cols-2 bg-gray-50 p-2 font-medium text-gray-700'>
+                <div>Metric</div>
+                <div className='text-right'>Value</div>
+              </div>
+              <div className='divide-y divide-gray-100'>
+                <div className='grid grid-cols-2 p-2'>
+                  <div className='text-gray-600'>Total Loans</div>
+                  <div className='text-right font-medium'>
+                    {riskAssessment.totalLoansTaken}
+                  </div>
+                </div>
+                <div className='grid grid-cols-2 p-2'>
+                  <div className='text-gray-600'>Total Repayments</div>
+                  <div className='text-right font-medium'>
+                    {riskAssessment.totalRepayments}
+                  </div>
+                </div>
+                <div className='grid grid-cols-2 p-2'>
+                  <div className='text-gray-600'>Defaulted Loans</div>
+                  <div className='text-right font-medium'>
+                    {riskAssessment.defaultedLoans}
+                  </div>
+                </div>
+                <div className='grid grid-cols-2 p-2'>
+                  <div className='text-gray-600'>Completed Loans</div>
+                  <div className='text-right font-medium'>
+                    {riskAssessment.completedLoans}
+                  </div>
+                </div>
+                <div className='grid grid-cols-2 p-2'>
+                  <div className='text-gray-600'>Last Evaluated</div>
+                  <div className='text-right font-medium text-xs'>
+                    {formatDate(riskAssessment.lastEvaluatedAt)}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Info Text */}
+            <div className='text-xs text-gray-500 italic text-center px-2'>
+              Risk scores are calculated using payment history and loan
+              completion rates.
+              <span
+                className='block mt-1 text-blue-600 underline'
+                onClick={() => navigate("/settings/risk-thresholds")}
+              >
+                Adjust thresholds in settings
+              </span>
             </div>
           </div>
         </div>
