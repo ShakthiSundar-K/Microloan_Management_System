@@ -39,7 +39,11 @@ const updateBorrowerPassword = async (borrowerId:string,password:string) => {
 }
 
 const deleteBorrower = async (borrowerId:string) => {
+  try{
     return await prisma.borrowers.delete({where:{borrowerId}});
+  }catch(error){
+    console.log(error);
+    throw new Error("Failed to delete borrower");}
 }
 
 

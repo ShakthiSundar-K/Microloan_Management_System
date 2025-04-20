@@ -18,6 +18,7 @@ import ExistingLoans from "./pages/ExistingLoans";
 import FinancialSummary from "./pages/FinancialSummary";
 import ClosePayments from "./pages/ClosePayments";
 import LoanDetails from "./pages/LoanDetails";
+import BorrowerDetails from "./pages/BorrowerDetails";
 
 const App = () => {
   return (
@@ -52,6 +53,10 @@ const App = () => {
             <Route path='/financial-summary' element={<FinancialSummary />} />
             <Route path='close-repayments' element={<ClosePayments />} />
             <Route path='/loan-details/:loanId' element={<LoanDetails />} />
+            <Route
+              path='/borrower-details/:borrowerId'
+              element={<BorrowerDetails />}
+            />
             {/* Add more protected routes here */}
           </Route>
         </Routes>

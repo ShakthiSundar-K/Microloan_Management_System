@@ -46,11 +46,11 @@ model Borrowers {
   createdAt    DateTime @default(now()) // Timestamp when the borrower is registered
   updatedAt    DateTime @updatedAt // Timestamp automatically updated on modification
 
-  // Relationships
-  loansTaken       Loans[] // Loans taken by this borrower
-  repaymentsMade   Repayments[] // Repayments made by this borrower
-  riskAssessment   RiskAssessment? // Risk assessment score for this borrower
-  RepaymentHistory RepaymentHistory[]
+  // Relationships with cascade delete
+  loansTaken       Loans[]            @relation("BorrowerLoans") // Loans taken by this borrower
+  repaymentsMade   Repayments[]       @relation("BorrowerRepayments") // Repayments made by this borrower
+  riskAssessment   RiskAssessment?    @relation("BorrowerRiskAssessment") // Risk assessment score for this borrower
+  RepaymentHistory RepaymentHistory[] @relation("BorrowerRepaymentHistory")
 
   @@index([name]) // Index on name to improve query performance
 }
@@ -74,7 +74,7 @@ model Loans {
   // Relationships
   repayments Repayments[] // Repayments made towards this loan
   lender     Users        @relation(fields: [issuedById], references: [userId]) // Lender issuing the loan
-  borrower   Borrowers    @relation(fields: [borrowerId], references: [borrowerId]) // Borrower taking the loan
+  borrower   Borrowers    @relation(fields: [borrowerId], references: [borrowerId], onDelete: Cascade, name: "BorrowerLoans") // Borrower taking the loan
 }
 
 /// Enum representing different statuses a loan can have.
@@ -101,7 +101,7 @@ model Repayments {
   // Relationships
   collectedByUser Users     @relation(fields: [collectedBy], references: [userId])
   loan            Loans     @relation(fields: [loanId], references: [loanId], onDelete: Cascade)
-  borrower        Borrowers @relation(fields: [borrowerId], references: [borrowerId])
+  borrower        Borrowers @relation(fields: [borrowerId], references: [borrowerId], onDelete: Cascade, name: "BorrowerRepayments")
 }
 
 /// Enum representing different statuses of repayments.
@@ -133,7 +133,7 @@ model RiskAssessment {
   riskLevel          RiskLevel
   lastEvaluatedAt    DateTime  @default(now())
 
-  borrower Borrowers @relation(fields: [borrowerId], references: [borrowerId])
+  borrower Borrowers @relation(fields: [borrowerId], references: [borrowerId], onDelete: Cascade, name: "BorrowerRiskAssessment")
 }
 
 /// Enum defining different risk levels for borrowers.
@@ -188,7 +188,7 @@ model RepaymentHistory {
   paidDate   DateTime
   createdAt  DateTime @default(now()) // Timestamp when the record was created
 
-  borrower Borrowers @relation(fields: [borrowerId], references: [borrowerId])
+  borrower Borrowers @relation(fields: [borrowerId], references: [borrowerId], onDelete: Cascade, name: "BorrowerRepaymentHistory")
 }
 
 model CapitalTracking {
