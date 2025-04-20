@@ -287,7 +287,7 @@ const LoanDetails: React.FC = () => {
 
     setProcessingAction(true);
     try {
-      await api.put(
+      await api.patch(
         ApiRoutes.closeLoan.path.replace(":loanId", loanId || ""),
         {},
         {

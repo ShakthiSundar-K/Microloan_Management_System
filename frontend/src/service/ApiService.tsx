@@ -50,6 +50,11 @@ type DataOnlyAxiosInstance = {
     data?: TBody,
     config?: AxiosRequestConfig
   ): Promise<TResponse>;
+  patch<TResponse, TBody = unknown>(
+    url: string,
+    data?: TBody,
+    config?: AxiosRequestConfig
+  ): Promise<TResponse>;
   delete<TResponse>(
     url: string,
     config?: AxiosRequestConfig
