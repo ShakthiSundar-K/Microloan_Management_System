@@ -6,9 +6,14 @@ import ApiRoutes from "../utils/ApiRoutes";
 import { CustomAxiosRequestConfig } from "../service/ApiService";
 import toast from "react-hot-toast";
 
+interface GetAllBorrowersResponse {
+  message: string;
+  borrowers: Borrower[];
+}
 interface Borrower {
   borrowerId: string;
   name: string;
+  passwordHash: string;
   phoneNumber: string;
   address: string;
 }
@@ -21,9 +26,12 @@ export default function Borrowers() {
 
   const getBorrowers = async () => {
     try {
-      const response = await api.get(ApiRoutes.getAllBorrowers.path, {
-        authenticate: ApiRoutes.getAllBorrowers.authenticate,
-      } as CustomAxiosRequestConfig);
+      const response = await api.get<GetAllBorrowersResponse>(
+        ApiRoutes.getAllBorrowers.path,
+        {
+          authenticate: ApiRoutes.getAllBorrowers.authenticate,
+        } as CustomAxiosRequestConfig
+      );
 
       setBorrowers(response.borrowers);
       setFilteredBorrowers(response.borrowers);

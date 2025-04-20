@@ -144,7 +144,6 @@ const BorrowerDetails: React.FC = () => {
           authenticate: ApiRoutes.getBorrowerInfo.authenticate,
         } as CustomAxiosRequestConfig
       );
-      console.log(response.data);
       setBorrowerDetails(response.data as unknown as BorrowerDetails);
       setFilteredLoans(
         (response.data as unknown as BorrowerDetails).activeLoans
