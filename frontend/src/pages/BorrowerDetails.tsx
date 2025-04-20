@@ -145,10 +145,11 @@ const BorrowerDetails: React.FC = () => {
         } as CustomAxiosRequestConfig
       );
       console.log(response.data);
-      setBorrowerDetails((response as unknown as GetBorrowersResponse).data);
+      setBorrowerDetails(response.data as unknown as BorrowerDetails);
       setFilteredLoans(
-        (response as unknown as GetBorrowersResponse).data.activeLoans
+        (response.data as unknown as BorrowerDetails).activeLoans
       );
+
       setLoading(false);
       toast.success("Borrower details fetched successfully");
     } catch {
