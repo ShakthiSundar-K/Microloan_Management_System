@@ -11,7 +11,7 @@ import {
   CheckCircle,
   Loader2,
   CreditCard,
-  DollarSign,
+  IndianRupee,
 } from "lucide-react";
 import ApiRoutes from "../utils/ApiRoutes";
 import api, { CustomAxiosRequestConfig } from "../service/ApiService";
@@ -536,7 +536,7 @@ const CreateLoan = () => {
                     </label>
                     <div className='relative'>
                       <div className='absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none'>
-                        <DollarSign size={16} className='text-gray-400' />
+                        <IndianRupee size={16} className='text-gray-400' />
                       </div>
                       <input
                         type='text'
