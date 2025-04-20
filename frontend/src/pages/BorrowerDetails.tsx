@@ -35,6 +35,17 @@ interface Borrower {
   createdAt: string;
 }
 
+interface GetBorrowersResponse {
+  message: string;
+  data: {
+    borrowers: Borrower[];
+    loanStats: LoanStats;
+    activeLoans: ActiveLoan[];
+    closedLoans: ActiveLoan[];
+    defaultedLoans: ActiveLoan[];
+  };
+}
+
 interface RepaymentStats {
   totalRepayments: number;
   paid: number;
@@ -133,13 +144,13 @@ const BorrowerDetails: React.FC = () => {
   const fetchBorrowerDetails = async (id: string) => {
     setLoading(true);
     try {
-      const response = await api.get(
+      const response = await api.get<GetBorrowersResponse>(
         ApiRoutes.getBorrowerInfo.path.replace(":borrowerId", id),
         {
           authenticate: ApiRoutes.getBorrowerInfo.authenticate,
         } as CustomAxiosRequestConfig
       );
-
+      console.log(response.data);
       setBorrowerDetails(response.data);
       setFilteredLoans(response.data.activeLoans);
       setLoading(false);
