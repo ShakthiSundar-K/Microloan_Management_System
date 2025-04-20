@@ -9,8 +9,6 @@ import {
   Check,
   X,
   AlertCircle,
-  CheckCircle,
-  Clock3,
   ChevronDown,
   Plus,
   CreditCard,
@@ -568,6 +566,7 @@ const BorrowerDetails: React.FC = () => {
                   <div className='bg-blue-50 text-blue-800 text-xs px-2 py-1 rounded-full flex items-center'>
                     Principal Min: {formatCurrency(principalMinFilter)}
                     <button
+                      title='principal-min-filter'
                       onClick={() => setPrincipalMinFilter("")}
                       className='ml-1 hover:text-blue-900'
                     >
@@ -580,6 +579,7 @@ const BorrowerDetails: React.FC = () => {
                   <div className='bg-blue-50 text-blue-800 text-xs px-2 py-1 rounded-full flex items-center'>
                     Principal Max: {formatCurrency(principalMaxFilter)}
                     <button
+                      title='principal-max-filter'
                       onClick={() => setPrincipalMaxFilter("")}
                       className='ml-1 hover:text-blue-900'
                     >
@@ -592,6 +592,7 @@ const BorrowerDetails: React.FC = () => {
                   <div className='bg-green-50 text-green-800 text-xs px-2 py-1 rounded-full flex items-center'>
                     Pending Min: {formatCurrency(pendingMinFilter)}
                     <button
+                      title='pending-min-filter'
                       onClick={() => setPendingMinFilter("")}
                       className='ml-1 hover:text-green-900'
                     >
@@ -604,6 +605,7 @@ const BorrowerDetails: React.FC = () => {
                   <div className='bg-green-50 text-green-800 text-xs px-2 py-1 rounded-full flex items-center'>
                     Pending Max: {formatCurrency(pendingMaxFilter)}
                     <button
+                      title='pending-max-filter'
                       onClick={() => setPendingMaxFilter("")}
                       className='ml-1 hover:text-green-900'
                     >
@@ -654,6 +656,7 @@ const BorrowerDetails: React.FC = () => {
                           </span>
                         </div>
                         <button
+                          title='More Options'
                           onClick={(e) => {
                             e.stopPropagation();
                             // Additional actions
