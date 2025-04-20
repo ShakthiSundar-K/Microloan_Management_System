@@ -94,8 +94,8 @@ const CreateBorrower = () => {
 
       // Reset form after success
       setTimeout(() => {
-        navigate("/borrowers");
-      }, 2000);
+        navigate("/new-loan");
+      }, 1500);
     } catch (error) {
       setLoading(false);
       toast.error("Failed to create borrower");
@@ -110,7 +110,7 @@ const CreateBorrower = () => {
         <button
           title='Go Back'
           className='absolute left-2 top-4 flex items-center text-white'
-          onClick={() => navigate("/borrowers")}
+          onClick={() => navigate("/new-loan")}
         >
           <ArrowLeft size={20} />
         </button>
@@ -143,7 +143,7 @@ const CreateBorrower = () => {
                 The borrower has been added to your account.
               </p>
               <button
-                onClick={() => navigate("/borrowers")}
+                onClick={() => navigate("/new-loan")}
                 className='bg-[#670FC5] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#5a0db1] transition-colors'
               >
                 View All Borrowers
