@@ -37,7 +37,7 @@ const recordPaymentController = async (req: Request, res: Response): Promise< vo
 const closePaymentsForTheDay = async (req: Request, res: Response): Promise<void> => {
     if (!isLender(req, res)) return;
     try {
-        const { id: collectorId } = req.user; // Get collector's ID from request
+        const { id: collectorId } = req.user; 
 
         await finishPaymentsForTheDay(collectorId); // Pass collectorId
 
