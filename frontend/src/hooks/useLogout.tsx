@@ -4,6 +4,8 @@ function useLogout() {
   const navigate = useNavigate();
   return () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("id");
+    localStorage.removeItem("role");
     toast.success("Logout Successfull");
     navigate("/login");
   };
