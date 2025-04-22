@@ -7,7 +7,7 @@ function useLogout() {
     localStorage.removeItem("id");
     localStorage.removeItem("role");
     toast.success("Logout Successfull");
-    navigate("/login");
+    navigate("/sign-in");
   };
 }
 
