@@ -21,6 +21,7 @@ import LoanDetails from "./pages/LoanDetails";
 import BorrowerDetails from "./pages/BorrowerDetails";
 import CreateBorrower from "./pages/CreateBorrower";
 import CreateLoan from "./pages/CreateLoan";
+import CreateExistingLoan from "./pages/CreateExistingLoan";
 
 const App = () => {
   return (
@@ -54,6 +55,10 @@ const App = () => {
             <Route path='/create-loan/:borrowerId' element={<CreateLoan />} />
             <Route path='/capital' element={<CashInHand />} />
             <Route path='/existing-loan' element={<ExistingLoans />} />
+            <Route
+              path='create-existing-loan/:borrowerId'
+              element={<CreateExistingLoan />}
+            />
             <Route path='/financial-summary' element={<FinancialSummary />} />
             <Route path='close-repayments' element={<ClosePayments />} />
             <Route path='/loan-details/:loanId' element={<LoanDetails />} />

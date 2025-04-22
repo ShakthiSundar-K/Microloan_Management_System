@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -329,6 +330,7 @@ const ClosePayments = () => {
                 Confirm Action
               </h3>
               <button
+                title='Close Confirmation'
                 onClick={() => {
                   setShowConfirmation(false);
                   setConfirmText("");
