@@ -16,8 +16,14 @@ const isLender = (req: Request, res: Response): boolean => {
   try {
     const userId = req.user.id;
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
-
-    await getMonthlyFinancialData(userId);
+    const { month } = req.body;
+    
+    if (!month || !month.match(/^\d{4}-\d{2}$/)) {
+      return res.status(400).json({ 
+        message: "Invalid month format. Please provide month in YYYY-MM format" 
+      });
+    }
+    await getMonthlyFinancialData(userId,month);
 
     res.status(200).json({
       message: "Monthly financial summary generated/updated successfully"
@@ -51,8 +57,18 @@ const getMonthlyFinancialSummary = async (req: Request, res: Response) => {
 
   try {
     const userId = req.user.id; // assuming JWT auth middleware adds this
-    const month = dayjs().format("YYYY-MM");
+    const { month: requestedMonth } = req.body;
+    
+    // Use requested month if valid, otherwise use current month
+    let month;
+    if (requestedMonth && requestedMonth.match(/^\d{4}-\d{2}$/)) {
+      month = requestedMonth;
+    } else {
+      month = dayjs().format("YYYY-MM");
+    }
 
+    console.log(`Fetching financial summary for month: ${month}`);
+    
     const summary = await findMonthlyFinancialSummary(userId, month);
 
     if (!summary) {
@@ -62,13 +78,13 @@ const getMonthlyFinancialSummary = async (req: Request, res: Response) => {
       });
     }
 
-    return res.status(200).json({
+     res.status(200).json({
       message: "Monthly financial summary retrieved successfully",
       data: summary,
     });
   } catch (error) {
     console.error("Error retrieving monthly summary:", error);
-    return res.status(500).json({
+     res.status(500).json({
       message: "An error occurred while retrieving the monthly summary.",
     });
   }

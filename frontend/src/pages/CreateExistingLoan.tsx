@@ -676,6 +676,7 @@ const CreateExistingLoan = () => {
                         <Calendar size={16} className='text-gray-400' />
                       </div>
                       <input
+                        title='Select date'
                         type='date'
                         name='issuedAt'
                         value={formData.issuedAt}

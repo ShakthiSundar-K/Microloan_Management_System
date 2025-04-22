@@ -1,16 +1,15 @@
 import prisma from "../config/prismaClient";
 import dayjs from "dayjs";
 
-export const getMonthlyFinancialData = async (userId: string) => {
+export const getMonthlyFinancialData = async (userId: string, month?: string) => {
   return await prisma.$transaction(async (tx) => {
-    const now = dayjs(); // current date
-    const startOfMonth = now.startOf("month").toDate();
-    const endOfMonth = now.endOf("month").toDate();
-    const month = now.format("YYYY-MM");
-    //   console.log("start of month",startOfMonth);
-    //   console.log("end of month",endOfMonth);
-    //   console.log(" month",month);
-
+    // If month is provided, use it; otherwise use current month
+    let targetDate = month ? dayjs(month) : dayjs();
+    
+    const startOfMonth = targetDate.startOf("month").toDate();
+    const endOfMonth = targetDate.endOf("month").toDate();
+    const monthFormatted = targetDate.format("YYYY-MM");
+    
     // 🔹 Loans Issued This Month
     const loansThisMonth = await tx.loans.findMany({
       where: {
@@ -24,7 +23,6 @@ export const getMonthlyFinancialData = async (userId: string) => {
         upfrontDeductedAmount: true,
       },
     });
-    //   console.log("Loans this month:", loansThisMonth);
 
     const totalLoansIssued = loansThisMonth.length;
     const totalPrincipalLent = loansThisMonth.reduce((sum, l) => sum + Number(l.principalAmount), 0);
@@ -72,7 +70,7 @@ export const getMonthlyFinancialData = async (userId: string) => {
 
     // 🔹 Upsert into FinancialSummary
     await tx.financialSummary.upsert({
-      where: { userId_month: { userId, month } },
+      where: { userId_month: { userId, month: monthFormatted } },
       update: {
         totalLoansIssued,
         totalPrincipalLent,
@@ -87,7 +85,7 @@ export const getMonthlyFinancialData = async (userId: string) => {
       },
       create: {
         userId,
-        month,
+        month: monthFormatted,
         totalLoansIssued,
         totalPrincipalLent,
         totalUpfrontDeductions,
