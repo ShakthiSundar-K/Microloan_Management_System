@@ -208,6 +208,58 @@ const newBorrowersThisMonth = newBorrowers.filter(b => b.loansTaken.length > 0).
   };
 };
 
+export const getFinancialSummariesByMonths = async (userId: string, months: string[]) => {
+  try {
+    // Find all financial summaries for the specified months
+    const summaries = await prisma.financialSummary.findMany({
+      where: {
+        userId: userId,
+        month: {
+          in: months
+        }
+      },
+      orderBy: {
+        month: 'asc'  // Order by month for consistent graph data
+      }
+    });
+
+    // Check if we're missing any requested months
+    const foundMonths = new Set(summaries.map(summary => summary.month));
+    const missingMonths = months.filter(month => !foundMonths.has(month));
+
+    // Generate summaries for missing months if needed
+    for (const month of missingMonths) {
+      // Try to generate the summary for the missing month
+      try {
+        await getMonthlyFinancialData(userId, month);
+        
+        // Fetch the newly generated summary
+        const newSummary = await prisma.financialSummary.findUnique({
+          where: {
+            userId_month: {
+              userId,
+              month
+            }
+          }
+        });
+        
+        if (newSummary) {
+          summaries.push(newSummary);
+        }
+      } catch (error) {
+        console.error(`Failed to generate summary for month ${month}:`, error);
+        // Continue with other months even if one fails
+      }
+    }
+
+    // Sort again after potentially adding new summaries
+    return summaries.sort((a, b) => a.month.localeCompare(b.month));
+  } catch (error) {
+    console.error("Error in getFinancialSummariesByMonths:", error);
+    throw error;
+  }
+};
+
 
 export const getLatestCapital = async (userId: string) => {
   return await prisma.capitalTracking.findFirst({

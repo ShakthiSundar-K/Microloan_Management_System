@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { getMonthlyFinancialData,findMonthlyFinancialSummary,getDynamicFinancialSummary,getLatestCapital } from "../models/financialSummaryModel";
+import { getMonthlyFinancialData,findMonthlyFinancialSummary,getDynamicFinancialSummary,getLatestCapital, getFinancialSummariesByMonths } from "../models/financialSummaryModel";
 import dayjs from "dayjs";
 
 const isLender = (req: Request, res: Response): boolean => {
@@ -118,6 +118,45 @@ const getDynamicFinancialSummaryController = async (
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
+const getFinancialSummaryForGraphController = async (req: Request, res: Response) => {
+  if (!isLender(req, res)) return;
+
+  try {
+    const userId = req.user.id;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+    
+    const { months } = req.body;
+    
+    // Validate months format
+    if (!Array.isArray(months)) {
+      return res.status(400).json({ 
+        message: "Invalid request format. 'months' must be an array of strings in YYYY-MM format" 
+      });
+    }
+    
+    for (const month of months) {
+      if (!month.match(/^\d{4}-\d{2}$/)) {
+        return res.status(400).json({ 
+          message: "Invalid month format. Each month must be in YYYY-MM format" 
+        });
+      }
+    }
+    
+    const summaries = await getFinancialSummariesByMonths(userId, months);
+    
+    res.status(200).json({
+      message: "Financial summaries retrieved successfully",
+      data: summaries
+    });
+  } catch (error) {
+    console.error("Error retrieving financial summaries for graph:", error);
+    res.status(500).json({
+      message: "Failed to retrieve financial summaries",
+      error: (error as Error).message,
+    });
+  }
+};
     
 
 const getLatestCapitalById = async (req:Request,res:Response) => {
@@ -134,4 +173,4 @@ try {
   }
 };
 
-export { getLatestCapitalById,generateMonthlyFinancialSummary ,generateMonthlyFinancialSummaryCron,getMonthlyFinancialSummary,getDynamicFinancialSummaryController};
+export {getFinancialSummaryForGraphController, getLatestCapitalById,generateMonthlyFinancialSummary ,generateMonthlyFinancialSummaryCron,getMonthlyFinancialSummary,getDynamicFinancialSummaryController};

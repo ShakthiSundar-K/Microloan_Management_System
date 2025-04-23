@@ -107,6 +107,10 @@ const ApiRoutes = {
     path: "/api/financial-summary",
     authenticate: true,
   },
+  getFinancialSummaryForGraph: {
+    path: "/api/financial-summary/graph",
+    authenticate: true,
+  },
   getDynamicFinancialSummary: {
     path: "/api/summary/dynamic",
     authenticate: true,
