@@ -22,6 +22,7 @@ import BorrowerDetails from "./pages/BorrowerDetails";
 import CreateBorrower from "./pages/CreateBorrower";
 import CreateLoan from "./pages/CreateLoan";
 import CreateExistingLoan from "./pages/CreateExistingLoan";
+import Documentation from "./pages/Documentation";
 
 const App = () => {
   return (
@@ -66,6 +67,7 @@ const App = () => {
               path='/borrower-details/:borrowerId'
               element={<BorrowerDetails />}
             />
+            <Route path='/docs' element={<Documentation />} />
             {/* Add more protected routes here */}
           </Route>
         </Routes>
