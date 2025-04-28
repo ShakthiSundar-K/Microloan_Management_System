@@ -1,7 +1,12 @@
 // components/FinanceBannerSimple.tsx
 import { ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const FinanceBannerSimple = () => {
+  const navigate = useNavigate();
+  const handleClick = () => {
+    navigate("/docs");
+  };
   return (
     <div className='relative bg-[#002866] text-white pt-4 ps-4 pe-4 overflow-hidden'>
       {/* Banner Content */}
@@ -15,6 +20,7 @@ const FinanceBannerSimple = () => {
         <button
           className='bg-purple-700 hover:bg-purple-800 transition-colors text-white px-6 py-2 rounded-full font-medium'
           title='Get Started'
+          onClick={handleClick}
         >
           <div className='flex flex-row gap-1 items-center justify-center'>
             <span>See how</span>
