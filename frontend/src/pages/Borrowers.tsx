@@ -36,7 +36,7 @@ export default function Borrowers() {
       setBorrowers(response.borrowers);
       setFilteredBorrowers(response.borrowers);
     } catch {
-      toast.error("Error fetching borrowers!");
+      console.error("Error fetching borrowers:", error);
     }
   };
 
