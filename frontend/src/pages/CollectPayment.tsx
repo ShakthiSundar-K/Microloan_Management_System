@@ -68,7 +68,6 @@ export default function CollectPayment() {
       setRepayments(validRepayments);
     } catch (error) {
       console.error("Error fetching repayments:", error);
-      toast.error("Error fetching repayments!");
     }
   };
 
