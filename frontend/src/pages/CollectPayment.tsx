@@ -23,7 +23,7 @@ interface Repayment {
   amountToPay: string;
   dueDate: string;
   status: string;
-  loan: Loan;
+  loan?: Loan; // Made optional to handle missing loan data
   borrower: Borrower;
 }
 
@@ -51,12 +51,23 @@ export default function CollectPayment() {
         } as CustomAxiosRequestConfig
       );
 
-      const filtered = response.data.filter((repayment: Repayment) =>
-        repayment.borrower.name.toLowerCase().includes(search.toLowerCase())
-      );
+      // Filter out repayments that don't have loan data and apply search filter
+      const validRepayments = response.data.filter((repayment: Repayment) => {
+        // Check if loan data exists
+        if (!repayment.loan) {
+          console.warn(`Repayment ${repayment.loanId} is missing loan data`);
+          return false;
+        }
 
-      setRepayments(filtered);
-    } catch {
+        // Apply search filter
+        return repayment.borrower.name
+          .toLowerCase()
+          .includes(search.toLowerCase());
+      });
+
+      setRepayments(validRepayments);
+    } catch (error) {
+      console.error("Error fetching repayments:", error);
       toast.error("Error fetching repayments!");
     }
   };
@@ -68,10 +79,16 @@ export default function CollectPayment() {
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchTerm(value);
-    getRepayments(value); // fetch filtered fresh data from backend
+    getRepayments(value);
   };
 
   const handleRecordPayment = (repayment: Repayment) => {
+    // Additional safety check before navigation
+    if (!repayment.loan) {
+      toast.error("Loan data is missing. Cannot record payment.");
+      return;
+    }
+
     navigate(`/record-payment/${repayment.borrowerId}/${repayment.loanId}`, {
       state: {
         name: repayment.borrower.name,
@@ -114,7 +131,7 @@ export default function CollectPayment() {
 
       {/* Content Area */}
       <div className='flex-1 overflow-auto bg-gray-50'>
-        {/* Search Bar Moved Here */}
+        {/* Search Bar */}
         <div className='sticky top-0 z-10 bg-gray-50 p-4 shadow-sm'>
           <div className='relative'>
             <span className='absolute left-3 top-2.5 text-gray-400'>
@@ -178,7 +195,8 @@ export default function CollectPayment() {
                           Pending:
                         </div>
                         <div className='font-medium text-gray-700'>
-                          ₹{repayment.loan.pendingAmount}
+                          {/* Safe access to loan.pendingAmount with fallback */}
+                          ₹{repayment.loan?.pendingAmount ?? "N/A"}
                         </div>
                       </div>
                       {new Date(repayment.dueDate).toDateString() ===
