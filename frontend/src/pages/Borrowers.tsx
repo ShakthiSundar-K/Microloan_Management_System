@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import api from "../service/ApiService";
 import ApiRoutes from "../utils/ApiRoutes";
 import { CustomAxiosRequestConfig } from "../service/ApiService";
-import toast from "react-hot-toast";
 
 interface GetAllBorrowersResponse {
   message: string;
@@ -36,7 +35,7 @@ export default function Borrowers() {
       setBorrowers(response.borrowers);
       setFilteredBorrowers(response.borrowers);
     } catch {
-      console.error("Error fetching borrowers:", error);
+      console.error("Error fetching borrowers:");
     }
   };
 
