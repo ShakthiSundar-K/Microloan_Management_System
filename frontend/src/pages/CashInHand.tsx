@@ -39,11 +39,13 @@ const CashInHand = () => {
   const [calculatedIdleCapital, setCalculatedIdleCapital] = useState<
     string | null
   >(null);
+  const [hasError, setHasError] = useState(false);
 
   // Fetch latest capital data
   useEffect(() => {
     const fetchCapitalData = async () => {
       setLoading(true);
+      setHasError(false);
       try {
         // Assuming userId is stored in localStorage or can be retrieved
         const userId = localStorage.getItem("id") || "";
@@ -60,7 +62,13 @@ const CashInHand = () => {
         setCalculatedIdleCapital(response.data.idleCapital);
       } catch (error) {
         console.error("Error fetching capital data:", error);
-        toast.error("Failed to load capital information");
+        setHasError(true);
+        // For new users with no capital data, we'll allow them to add initial cash
+        // Set default values to enable the add cash functionality
+        setCalculatedIdleCapital("0");
+        toast.error(
+          "No capital data found. You can add your initial cash below."
+        );
       } finally {
         setLoading(false);
       }
@@ -71,9 +79,9 @@ const CashInHand = () => {
 
   // Calculate new idle capital based on inputs
   useEffect(() => {
-    if (!capitalData) return;
-
-    const currentIdleCapital = parseFloat(capitalData.idleCapital);
+    const currentIdleCapital = capitalData
+      ? parseFloat(capitalData.idleCapital)
+      : 0;
     let newIdleCapital = currentIdleCapital;
 
     // Add extra cash if any
@@ -99,10 +107,10 @@ const CashInHand = () => {
 
   // Handle form submission to update capital
   const handleUpdateCapital = async () => {
-    if (!capitalData) return;
-
     // Calculate new values
-    const currentIdleCapital = parseFloat(capitalData.idleCapital);
+    const currentIdleCapital = capitalData
+      ? parseFloat(capitalData.idleCapital)
+      : 0;
     const addValue = addAmount ? parseFloat(addAmount) : 0;
     const subtractValue = subtractAmount ? parseFloat(subtractAmount) : 0;
     const newIdleCapital = currentIdleCapital + addValue - subtractValue;
@@ -129,6 +137,7 @@ const CashInHand = () => {
         setConfirmAmount("");
         setShowAddConfirm(false);
         setShowSubtractConfirm(false);
+        setHasError(false);
 
         // Fetch latest data
         const userId = localStorage.getItem("id") || "";
@@ -142,6 +151,10 @@ const CashInHand = () => {
           .then((response) => {
             setCapitalData(response.data);
             setCalculatedIdleCapital(response.data.idleCapital);
+          })
+          .catch(() => {
+            // If still no data after update, keep the add functionality available
+            setCalculatedIdleCapital("0");
           });
       }, 1500);
     } catch (error) {
@@ -168,7 +181,9 @@ const CashInHand = () => {
       return;
     }
 
-    const currentIdleCapital = parseFloat(capitalData?.idleCapital || "0");
+    const currentIdleCapital = capitalData
+      ? parseFloat(capitalData.idleCapital)
+      : 0;
     if (parseFloat(subtractAmount) > currentIdleCapital) {
       toast.error("You cannot spend more than your idle capital");
       return;
@@ -260,78 +275,106 @@ const CashInHand = () => {
                 Your idle capital has been updated accordingly.
               </p>
             </div>
-          ) : capitalData ? (
+          ) : (
             <>
-              {/* Capital Overview */}
-              <div className='mb-6'>
-                <div className='flex items-center gap-3 mb-4'>
-                  <div className='bg-[#F3EFFC] p-3 rounded-full flex items-center justify-center'>
-                    <Wallet size={20} className='text-[#670FC5]' />
+              {/* Capital Overview - Show if data exists */}
+              {capitalData && (
+                <div className='mb-6'>
+                  <div className='flex items-center gap-3 mb-4'>
+                    <div className='bg-[#F3EFFC] p-3 rounded-full flex items-center justify-center'>
+                      <Wallet size={20} className='text-[#670FC5]' />
+                    </div>
+                    <h2 className='font-semibold text-gray-800'>
+                      Capital Overview
+                    </h2>
                   </div>
-                  <h2 className='font-semibold text-gray-800'>
-                    Capital Overview
-                  </h2>
+
+                  <div className='bg-gray-50 rounded-lg p-4'>
+                    <div className='mb-3'>
+                      <p className='text-xs text-gray-500'>Last Updated</p>
+                      <p className='font-medium text-gray-700'>
+                        {formatDate(capitalData.date)}
+                      </p>
+                    </div>
+
+                    <div className='grid grid-cols-2 gap-4 mb-2'>
+                      <div className='bg-white p-3 rounded-lg shadow-sm'>
+                        <p className='text-xs text-gray-500 mb-1'>
+                          Total Capital
+                        </p>
+                        <p className='text-lg font-bold text-gray-800'>
+                          {formatCurrency(capitalData.totalCapital)}
+                        </p>
+                      </div>
+                      <div className='bg-blue-50 p-3 rounded-lg shadow-sm'>
+                        <p className='text-xs text-blue-600 mb-1'>
+                          Cash In Hand
+                        </p>
+                        <p className='text-lg font-bold text-blue-700'>
+                          {formatCurrency(capitalData.idleCapital)}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className='grid grid-cols-2 gap-4'>
+                      <div className='bg-white p-3 rounded-lg shadow-sm'>
+                        <p className='text-xs text-gray-500 mb-1'>
+                          Pending Loans
+                        </p>
+                        <p className='text-lg font-bold text-gray-800'>
+                          {formatCurrency(capitalData.pendingLoanAmount)}
+                        </p>
+                      </div>
+                      <div className='bg-white p-3 rounded-lg shadow-sm'>
+                        <p className='text-xs text-gray-500 mb-1'>
+                          Today's Collection
+                        </p>
+                        <p className='text-lg font-bold text-gray-800'>
+                          {formatCurrency(capitalData.amountCollectedToday)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
+              )}
 
-                <div className='bg-gray-50 rounded-lg p-4'>
-                  <div className='mb-3'>
-                    <p className='text-xs text-gray-500'>Last Updated</p>
-                    <p className='font-medium text-gray-700'>
-                      {formatDate(capitalData.date)}
-                    </p>
-                  </div>
-
-                  <div className='grid grid-cols-2 gap-4 mb-2'>
-                    <div className='bg-white p-3 rounded-lg shadow-sm'>
-                      <p className='text-xs text-gray-500 mb-1'>
-                        Total Capital
+              {/* Show message for new users */}
+              {hasError && !capitalData && (
+                <div className='mb-6'>
+                  <div className='bg-blue-50 rounded-lg p-4 flex items-start gap-3'>
+                    <Info size={20} className='text-blue-600 mt-0.5' />
+                    <div>
+                      <p className='text-sm text-blue-800 font-medium'>
+                        Welcome! Set up your initial cash
                       </p>
-                      <p className='text-lg font-bold text-gray-800'>
-                        {formatCurrency(capitalData.totalCapital)}
-                      </p>
-                    </div>
-                    <div className='bg-blue-50 p-3 rounded-lg shadow-sm'>
-                      <p className='text-xs text-blue-600 mb-1'>Cash In Hand</p>
-                      <p className='text-lg font-bold text-blue-700'>
-                        {formatCurrency(capitalData.idleCapital)}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className='grid grid-cols-2 gap-4'>
-                    <div className='bg-white p-3 rounded-lg shadow-sm'>
-                      <p className='text-xs text-gray-500 mb-1'>
-                        Pending Loans
-                      </p>
-                      <p className='text-lg font-bold text-gray-800'>
-                        {formatCurrency(capitalData.pendingLoanAmount)}
-                      </p>
-                    </div>
-                    <div className='bg-white p-3 rounded-lg shadow-sm'>
-                      <p className='text-xs text-gray-500 mb-1'>
-                        Today's Collection
-                      </p>
-                      <p className='text-lg font-bold text-gray-800'>
-                        {formatCurrency(capitalData.amountCollectedToday)}
+                      <p className='text-xs text-blue-700 mt-1'>
+                        As a new user, add your starting capital below to begin
+                        managing your funds
                       </p>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
 
-              {/* Update Cash Section */}
+              {/* Update Cash Section - Always show */}
               <div className='mb-6'>
                 <div className='flex items-center gap-3 mb-4'>
                   <div className='bg-[#F3EFFC] p-3 rounded-full flex items-center justify-center'>
                     <RefreshCw size={20} className='text-[#670FC5]' />
                   </div>
-                  <h2 className='font-semibold text-gray-800'>Update Cash</h2>
+                  <h2 className='font-semibold text-gray-800'>
+                    {hasError && !capitalData
+                      ? "Add Initial Cash"
+                      : "Update Cash"}
+                  </h2>
                 </div>
 
                 {/* Add Extra Cash */}
                 <div className='mb-4'>
                   <label className='block text-sm font-medium text-gray-700 mb-1'>
-                    Got extra cash to put in thandal?
+                    {hasError && !capitalData
+                      ? "Add your starting capital"
+                      : "Got extra cash to put in thandal?"}
                   </label>
                   <div className='relative'>
                     <div className='absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none'>
@@ -348,26 +391,28 @@ const CashInHand = () => {
                   </div>
                 </div>
 
-                {/* Subtract Spent Cash */}
-                <div className='mb-4'>
-                  <label className='block text-sm font-medium text-gray-700 mb-1'>
-                    Spent some amount?
-                  </label>
-                  <div className='relative'>
-                    <div className='absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none'>
-                      <MinusCircle size={16} className='text-red-500' />
+                {/* Subtract Spent Cash - Only show if there's existing capital */}
+                {capitalData && (
+                  <div className='mb-4'>
+                    <label className='block text-sm font-medium text-gray-700 mb-1'>
+                      Spent some amount?
+                    </label>
+                    <div className='relative'>
+                      <div className='absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none'>
+                        <MinusCircle size={16} className='text-red-500' />
+                      </div>
+                      <input
+                        type='number'
+                        min='0'
+                        max={capitalData.idleCapital}
+                        value={subtractAmount}
+                        onChange={(e) => setSubtractAmount(e.target.value)}
+                        placeholder='Enter amount spent'
+                        className='w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#670FC5] focus:border-transparent'
+                      />
                     </div>
-                    <input
-                      type='number'
-                      min='0'
-                      max={capitalData.idleCapital}
-                      value={subtractAmount}
-                      onChange={(e) => setSubtractAmount(e.target.value)}
-                      placeholder='Enter amount spent'
-                      className='w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#670FC5] focus:border-transparent'
-                    />
                   </div>
-                </div>
+                )}
 
                 {/* Calculated New Balance */}
                 {(addAmount || subtractAmount) && (
@@ -386,7 +431,11 @@ const CashInHand = () => {
                 )}
 
                 {/* Action Buttons */}
-                <div className='grid grid-cols-2 gap-4 mt-4'>
+                <div
+                  className={`grid ${
+                    capitalData ? "grid-cols-2" : "grid-cols-1"
+                  } gap-4 mt-4`}
+                >
                   <button
                     type='button'
                     onClick={handleAddCashClick}
@@ -398,46 +447,35 @@ const CashInHand = () => {
                     }`}
                   >
                     <PlusCircle size={18} className='mr-2' />
-                    Add Cash
+                    {hasError && !capitalData ? "Add Initial Cash" : "Add Cash"}
                   </button>
 
-                  <button
-                    type='button'
-                    onClick={handleSubtractCashClick}
-                    disabled={
-                      !subtractAmount ||
-                      parseFloat(subtractAmount) <= 0 ||
-                      parseFloat(subtractAmount) >
-                        parseFloat(capitalData.idleCapital)
-                    }
-                    className={`bg-red-600 text-white py-3 rounded-lg font-medium hover:bg-red-700 transition-colors flex items-center justify-center ${
-                      !subtractAmount ||
-                      parseFloat(subtractAmount) <= 0 ||
-                      parseFloat(subtractAmount) >
-                        parseFloat(capitalData.idleCapital)
-                        ? "opacity-50 cursor-not-allowed"
-                        : ""
-                    }`}
-                  >
-                    <MinusCircle size={18} className='mr-2' />
-                    Subtract Cash
-                  </button>
+                  {capitalData && (
+                    <button
+                      type='button'
+                      onClick={handleSubtractCashClick}
+                      disabled={
+                        !subtractAmount ||
+                        parseFloat(subtractAmount) <= 0 ||
+                        parseFloat(subtractAmount) >
+                          parseFloat(capitalData.idleCapital)
+                      }
+                      className={`bg-red-600 text-white py-3 rounded-lg font-medium hover:bg-red-700 transition-colors flex items-center justify-center ${
+                        !subtractAmount ||
+                        parseFloat(subtractAmount) <= 0 ||
+                        parseFloat(subtractAmount) >
+                          parseFloat(capitalData.idleCapital)
+                          ? "opacity-50 cursor-not-allowed"
+                          : ""
+                      }`}
+                    >
+                      <MinusCircle size={18} className='mr-2' />
+                      Subtract Cash
+                    </button>
+                  )}
                 </div>
               </div>
             </>
-          ) : (
-            <div className='flex flex-col items-center justify-center py-8'>
-              <AlertCircle size={32} className='text-red-500 mb-4' />
-              <p className='text-gray-600 text-center'>
-                Failed to load capital data
-              </p>
-              <button
-                onClick={() => window.location.reload()}
-                className='mt-4 bg-[#670FC5] text-white px-4 py-2 rounded-lg text-sm'
-              >
-                Retry
-              </button>
-            </div>
           )}
         </div>
       </div>
